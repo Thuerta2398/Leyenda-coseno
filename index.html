@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>La Leyenda del Coseno</title>
+<meta name="description" content="RPG educativo para practicar la Ley de los Cosenos">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f0e17;--panel:#1d1b33;--border:#e8e6f0;--text:#fffffe;--muted:#b8b5d1;--accent:#ffd447;--good:#5ce07a;--bad:#ff5d6c;}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+body{min-height:100vh;display:flex;justify-content:center;padding:10px;}
+#wrap{width:100%;max-width:max(320px,min(760px,calc((100vh - 250px) * 4 / 3)));}
+#screen{position:relative;border:4px solid var(--border);border-radius:6px;overflow:hidden;background:#000;}
+canvas{display:block;width:100%;height:auto;image-rendering:pixelated;}
+.px{font-family:"Press Start 2P",monospace;}
+#overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:16px;background:rgba(10,8,30,.82);}
+#overlay[hidden]{display:none}
+#overlay h1{font-family:"Press Start 2P",monospace;color:var(--accent);font-size:clamp(16px,4.5vw,30px);line-height:1.5;margin:0;text-shadow:3px 3px 0 #b33;}
+#overlay p{margin:0;color:var(--muted);font-size:clamp(12px,2.6vw,16px);max-width:520px;line-height:1.45}
+#overlay input{font-size:16px;padding:10px 12px;border-radius:4px;border:3px solid var(--border);background:#fff;color:#111;width:min(320px,90%);text-align:center}
+#mute{position:absolute;top:6px;right:6px;background:rgba(0,0,0,.45);border:2px solid #fff;color:#fff;border-radius:4px;font-size:16px;padding:2px 6px;cursor:pointer;z-index:3}
+button{font-family:inherit;font-size:15px;cursor:pointer;border:3px solid var(--border);background:#3b3769;color:#fff;border-radius:4px;padding:8px 12px;}
+button:hover{background:#4f4a8c}
+button:active{transform:translateY(1px)}
+button.main{background:#c0392b;font-family:"Press Start 2P",monospace;font-size:13px;padding:12px 16px}
+button.main:hover{background:#e04a3a}
+#ui{margin-top:8px;background:var(--panel);border:4px solid var(--border);border-radius:6px;padding:12px 14px;min-height:118px;font-size:16px;line-height:1.45;}
+.dlg{cursor:pointer;position:relative;padding-right:20px}
+.dlg b{color:var(--accent);font-family:"Press Start 2P",monospace;font-size:11px;display:block;margin-bottom:6px}
+.dlg .nx{position:absolute;right:0;bottom:0;animation:blink 1s infinite;color:var(--accent)}
+@keyframes blink{50%{opacity:0}}
+.formula{display:inline-block;background:#fff6d6;color:#3a2a10;padding:2px 8px;border-radius:4px;font-weight:600;font-family:"Cambria Math","Times New Roman",serif;font-size:1.08em}
+.q{font-size:17px;margin-bottom:8px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+#ans{flex:1;min-width:120px;font-size:18px;padding:8px 10px;border-radius:4px;border:3px solid var(--border);}
+.btns button{font-size:14px;padding:6px 10px}
+.hintbox{margin-top:6px;color:#ffe9a3}
+.res{font-weight:700;margin-bottom:6px}
+.res.ok{color:var(--good)} .res.bad{color:var(--bad)}
+.sol{background:#2a2750;border-left:4px solid var(--accent);padding:8px 10px;border-radius:4px;margin:6px 0 10px;font-family:"Cambria Math","Times New Roman",serif;font-size:17px}
+.calc{margin-top:8px;padding:8px;background:#2a2750;border-radius:4px}
+.calc input{width:100%;font-size:15px;padding:6px 8px;border-radius:4px;border:2px solid #aaa;font-family:monospace}
+.calc small{color:var(--muted)}
+.calcout{font-family:monospace;font-size:17px;color:var(--accent);margin-top:4px;min-height:1.3em}
+.info .obj{color:var(--accent)}
+.info small{color:var(--muted)}
+.shake{animation:sh .3s}
+@keyframes sh{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+#pad{display:none;justify-content:space-between;align-items:center;margin-top:10px;user-select:none;-webkit-user-select:none;touch-action:none}
+#pad.on{display:flex}
+.dpad{display:grid;grid-template-columns:repeat(3,56px);grid-template-rows:repeat(3,56px);gap:4px}
+.dpad button,.abtn{font-size:22px;padding:0;touch-action:none}
+.dpad .u{grid-column:2;grid-row:1}.dpad .l{grid-column:1;grid-row:2}.dpad .r{grid-column:3;grid-row:2}.dpad .d{grid-column:2;grid-row:3}
+.abtn{width:76px;height:76px;border-radius:50%;background:#c0392b;font-family:"Press Start 2P",monospace;font-size:20px}
+.cert{background:#fff8e1;color:#3a2a10;border:6px double #b8860b;border-radius:8px;padding:16px 18px;max-width:520px}
+.cert h2{font-family:"Press Start 2P",monospace;font-size:clamp(12px,3vw,18px);color:#b33;margin:0 0 10px;line-height:1.5}
+.cert p{color:#3a2a10 !important}
+.cert table{margin:10px auto;border-collapse:collapse;font-size:15px}
+.cert td{padding:3px 10px;text-align:left}
+.cert td:last-child{font-weight:700;text-align:right}
+button,#pad,canvas{touch-action:manipulation;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+#overlay{overflow-y:auto;justify-content:safe center}
+#overlay h1{font-size:clamp(14px,min(4.5vw,6vh),30px)}
+/* Teclado numérico propio (pantallas táctiles) */
+.kp{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-top:8px}
+.kp button{padding:0;height:42px;font-size:18px;font-weight:700;background:#2a2750}
+.kp button.fx{background:#4a3f7a;font-size:15px}
+.kp button.del{background:#7a2f3a}
+.kp button.use{background:#2f7a45;font-size:13px}
+input.tgt{outline:3px solid var(--accent);outline-offset:1px}
+body.battle #pad{display:none}
+/* Horizontal en celular/tablet: juego a la izquierda, panel y controles a la derecha */
+@media (orientation:landscape) and (pointer:coarse){
+  body{padding:6px;min-height:0;height:100vh;height:100dvh;overflow:hidden;align-items:center}
+  #wrap{--h:min(calc(100vh - 12px), calc((100vw - 330px) * .75));--h:min(calc(100dvh - 12px), calc((100vw - 330px) * .75));
+        max-width:none;width:100%;display:grid;grid-template-columns:calc(var(--h) * 4 / 3) minmax(0,400px);grid-template-rows:minmax(0,1fr) auto;
+        gap:8px;height:var(--h);justify-content:center}
+  #screen{grid-row:1 / 3;height:var(--h);width:calc(var(--h) * 4 / 3)}
+  #screen canvas{height:100%;width:100%}
+  #ui{margin:0;min-height:0;overflow-y:auto;padding:8px 10px;font-size:15px}
+  #pad{margin:0}
+  body.battle #ui{grid-row:1 / 3}
+  .dpad{grid-template-columns:repeat(3,48px);grid-template-rows:repeat(3,48px)}
+  .abtn{width:66px;height:66px}
+  .q{font-size:15px}
+  .btns button{font-size:13px;padding:5px 7px}
+  .kp button{height:36px;font-size:16px}
+  .sol{font-size:15px}
+  #overlay{gap:8px}
+  #overlay p{font-size:12px}
+  .cert{padding:8px 12px}.cert table{margin:4px auto;font-size:13px}
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="screen">
+    <canvas id="cv" width="640" height="480"></canvas>
+    <button id="mute" title="Sonido">🔊</button>
+    <div id="overlay">
+      <h1>La Leyenda<br>del Coseno</h1>
+      <p>Un pequeño RPG para practicar la <b>Ley de los Cosenos</b>. Vence monstruos resolviendo triángulos y derrota al Dragón Trigonométrico.</p>
+      <input id="nameIn" placeholder="Escribe tu nombre completo" maxlength="40" autocomplete="off">
+      <button class="main" id="startBtn">▶ COMENZAR</button>
+      <p style="font-size:13px">Muévete con flechas / WASD · Habla con Espacio o Enter · En celular usa los botones de abajo.<br>Necesitarás calculadora (el juego trae una).</p>
+    </div>
+  </div>
+  <div id="ui"></div>
+  <div id="pad">
+    <div class="dpad">
+      <button class="u" data-d="up">▲</button><button class="l" data-d="left">◀</button>
+      <button class="r" data-d="right">▶</button><button class="d" data-d="down">▼</button>
+    </div>
+    <button class="abtn" id="aBtn">A</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+// ======================= CONFIGURACIÓN =======================
+const TILE = 32, VW = 20, VH = 15;
+const NIVEL_BOSQUE = 3;   // nivel para cruzar el río
+const NIVEL_CASTILLO = 5; // nivel para entrar al castillo
+const PROB_ENCUENTRO = 0.12;
+
+// Mapa: # árbol  ~ agua  = puente  _ camino  . pasto  " hierba alta (zona 1)
+// ; bosque (zona 2)  X muro  F piso castillo  H casa
+// P inicio  S sabio  N aldeana  K guardia río  L guardia castillo  C cofre  B jefe
+const SRC = [
+"########################################",
+"#~~~~~~~~~~~~~~#;;;;;;;;##;;;;;;;;;;;;;#",
+"#~~XXXXXXXXX~~~#;;;#;;;;;;;;;#;;;;C;;;;#",
+"#~~XFFFFFFFX~~~#;;;;;;;##;;;;;;;;;;;;;;#",
+"#~~XFFFBFFFX~~~;;;##;;;;;;;;;;#;;;;;##;#",
+"#~~XFFFFFFFX~~~;;;;;;;;;#;;;;;;;;;;;;;;#",
+"#~~XXXX_XXXX~~~;;#;;;;;;;;;;##;;;;;;;;;#",
+"#~~~~~~=~~~~~~~;;;;;;;;#;;;;;;;;;;#;;;;#",
+"#~~~~~~=~~~~~~~;;;;##;;;;;;;;;;;;;;;;;;#",
+"#......L.......;;;;;;;;;;;;;;;#;;;;;;;;#",
+"#.....____.....;;;;;;;;;;;;;;;;;;;;;;;;#",
+"#~~~~~~~~~~~~~~~~~~~~~~~~=~~~~~~~~~~~~~#",
+"#~~~~~~~~~~~~~~~~~~~~~~~~=~~~~~~~~~~~~~#",
+"#........................K.............#",
+"#.HHH...HHH..............________\"\"\"\"\"\"#",
+"#.HHH...HHH..............___\"\"\"\"\"\"\"\"\"\"\"#",
+"#....S...................___\"\"\"\"\"\"\"\"\"\"\"#",
+"#_________________________\"\"\"\"\"\"\"\"\"\"\"\"\"#",
+"#......N..................\"\"\"\"\"\"\"\"\"\"\"\"\"#",
+"#.HHH...............\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"#",
+"#.HHH.....P.........\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"#",
+"#..............\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"C\"\"\"\"\"\"#",
+"#..............\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"#",
+"########################################",
+];
+
+// ======================= TEXTOS =======================
+const TXT = {
+  intro: ["El Dragón Trigonométrico ha robado la luz del reino.",
+          "Dicen que solo quien domine la LEY DE LOS COSENOS podrá vencerlo.",
+          "Busca al Sabio Coseno en la aldea: el anciano de túnica morada."],
+  S: ["¡Bienvenido, aprendiz! Soy el Sabio Coseno.",
+      "Si conoces DOS LADOS y el ÁNGULO ENTRE ELLOS, puedes encontrar el tercer lado:",
+      "<span class='formula'>c² = a² + b² − 2ab·cos(C)</span>",
+      "Ojo: el ángulo C es el que queda ENFRENTE del lado c que buscas.",
+      "En la hierba alta (al este) habitan monstruos. ¡Cada respuesta correcta es un golpe!",
+      "Al llegar a nivel 3, el guardia del puente te dejará pasar al Bosque Sombrío."],
+  N: ["¿Conoces los TRES LADOS y buscas un ángulo? Despeja el coseno:",
+      "<span class='formula'>cos(C) = (a² + b² − c²) / (2ab)</span>",
+      "Después usa cos⁻¹ (en la calculadora: SHIFT + cos) para obtener el ángulo.",
+      "¡Y revisa que tu calculadora esté en modo GRADOS (DEG), no en radianes!",
+      "Redondea tus respuestas a 1 decimal. Se acepta un pequeño margen de error."],
+  Kno: ["¡Alto! Más allá del río está el Bosque Sombrío.",
+        `Solo dejo pasar a guerreros de nivel ${NIVEL_BOSQUE} o más. Entrena en la hierba alta.`],
+  Kyes: ["Veo que te has hecho fuerte. ¡Adelante!",
+         "Cuidado: en el bosque los monstruos también te pedirán encontrar ÁNGULOS."],
+  Lno: ["Tras este puente está el castillo del Dragón.",
+        `Necesitas nivel ${NIVEL_CASTILLO} para enfrentarlo. Sigue entrenando en el bosque.`],
+  Lyes: ["Estás listo. El Dragón propone problemas del mundo real.",
+         "Lee con calma, dibuja el triángulo y que la Ley de los Cosenos te acompañe."],
+  B: ["¡JA, JA, JA! ¿Un aprendiz se atreve a entrar a mi castillo?",
+      "Mis acertijos son PROBLEMAS REALES. Cinco golpes necesitarás... ¡si puedes!"],
+  formulas: ["<b>Para encontrar un LADO</b> (conoces 2 lados y el ángulo entre ellos):<br><span class='formula'>c² = a² + b² − 2ab·cos(C)</span>",
+             "<b>Para encontrar un ÁNGULO</b> (conoces los 3 lados):<br><span class='formula'>cos(C) = (a² + b² − c²) / (2ab)</span> y luego C = cos⁻¹(…)",
+             "El lado <b>a</b> está enfrente del ángulo <b>A</b>, el lado <b>b</b> enfrente de <b>B</b> y el lado <b>c</b> enfrente de <b>C</b>."],
+};
+
+const MONS = {
+  1: [
+    {name:"Slime Verde", hits:1, dmg:4, xp:10, kind:"slime", color:"#5ce07a"},
+    {name:"Slime Azul", hits:1, dmg:4, xp:10, kind:"slime", color:"#4fa3ff"},
+    {name:"Murciélago Seno", hits:2, dmg:4, xp:16, kind:"bat", color:"#9b6ce0"},
+  ],
+  2: [
+    {name:"Fantasma Radián", hits:2, dmg:6, xp:22, kind:"ghost", color:"#cfe8ff"},
+    {name:"Slime Carmesí", hits:2, dmg:6, xp:20, kind:"slime", color:"#ff5d6c"},
+    {name:"Gólem Angular", hits:3, dmg:7, xp:32, kind:"golem", color:"#8d8a99"},
+  ],
+  boss: {name:"Dragón Trigonométrico", hits:5, dmg:7, xp:150, kind:"dragon", color:"#d63a3a"},
+};
+
+// ======================= UTILIDADES =======================
+const $ = id => document.getElementById(id);
+let TOUCH = false;
+function detectTouch(){ return matchMedia("(pointer:coarse)").matches || "ontouchstart" in window; }
+const rnd = (a,b) => a + Math.floor(Math.random()*(b-a+1));
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+const cosd = a => Math.cos(a*Math.PI/180);
+const acosd = v => Math.acos(Math.max(-1, Math.min(1, v)))*180/Math.PI;
+const f1 = n => (Math.round(n*10)/10).toFixed(1);
+const f2 = n => (Math.round(n*100)/100).toFixed(2);
+const LET = ["A","B","C"];
+
+// ======================= GENERADOR DE PROBLEMAS =======================
+function angs(s){
+  const A = acosd((s.b*s.b + s.c*s.c - s.a*s.a)/(2*s.b*s.c));
+  const B = acosd((s.a*s.a + s.c*s.c - s.b*s.b)/(2*s.a*s.c));
+  return {A, B, C:180-A-B};
+}
+function genSide(lo, hi, angList){
+  const X = pick(LET), [Y,Z] = LET.filter(k=>k!==X);
+  const x = X.toLowerCase(), y = Y.toLowerCase(), z = Z.toLowerCase();
+  const vy = rnd(lo,hi), vz = rnd(lo,hi), g = angList ? pick(angList) : rnd(20,150);
+  const x2 = vy*vy + vz*vz - 2*vy*vz*cosd(g), vx = Math.sqrt(x2);
+  const s = {}; s[x]=vx; s[y]=vy; s[z]=vz;
+  const an0 = angs(s); if (Math.min(an0.A, an0.B, an0.C) < 18) return genSide(lo, hi, angList); // evita triángulos muy planos
+  return {
+    kind:"side", X,Y,Z,x,y,z,vx,vy,vz,g,s, an:angs(s), answer:vx, tol:Math.max(0.15, vx*0.01), unit:"",
+    lab:{sides:{[x]:"?",[y]:vy,[z]:vz}, angles:{[X]:g+"°"}},
+    text:`Conoces dos lados y el ángulo entre ellos. Encuentra el lado <b>${x}</b> (redondea a 1 decimal).`,
+    hints:[`<span class='formula'>${x}² = ${y}² + ${z}² − 2·${y}·${z}·cos(${X})</span>`,
+           `<span class='formula'>${x}² = ${vy}² + ${vz}² − 2(${vy})(${vz})·cos(${g}°)</span>`],
+    sol:`${x}² = ${vy*vy} + ${vz*vz} − ${2*vy*vz}·cos(${g}°) = ${f2(x2)} &nbsp;⇒&nbsp; ${x} = √${f2(x2)} ≈ <b>${f1(vx)}</b>`,
+    ansTxt:`${x} ≈ ${f1(vx)}`,
+  };
+}
+function genAngle(lo, hi){
+  let s, an;
+  do {
+    s = {a:rnd(lo,hi), b:rnd(lo,hi), c:rnd(lo,hi)};
+    if (s.a+s.b<=s.c+1 || s.a+s.c<=s.b+1 || s.b+s.c<=s.a+1) continue;
+    an = angs(s);
+  } while (!an || Math.min(an.A,an.B,an.C) < 22);
+  const X = pick(LET), [Y,Z] = LET.filter(k=>k!==X);
+  const x = X.toLowerCase(), y = Y.toLowerCase(), z = Z.toLowerCase();
+  const vx=s[x], vy=s[y], vz=s[z], num=vy*vy+vz*vz-vx*vx, den=2*vy*vz, cv=num/den, ang=an[X];
+  return {
+    kind:"angle", X,Y,Z,x,y,z,vx,vy,vz,s,an, answer:ang, tol:0.6, unit:"°",
+    lab:{sides:{a:s.a,b:s.b,c:s.c}, angles:{[X]:"?"}},
+    text:`Conoces los tres lados. Encuentra el ángulo <b>${X}</b> en grados (redondea a 1 decimal).`,
+    hints:[`<span class='formula'>cos(${X}) = (${y}² + ${z}² − ${x}²) / (2·${y}·${z})</span>`,
+           `<span class='formula'>cos(${X}) = (${vy}² + ${vz}² − ${vx}²) / (2·${vy}·${vz})</span>`],
+    sol:`cos(${X}) = (${vy*vy} + ${vz*vz} − ${vx*vx}) / ${den} = ${num}/${den} ≈ ${cv.toFixed(4)} &nbsp;⇒&nbsp; ${X} = cos⁻¹(${cv.toFixed(4)}) ≈ <b>${f1(ang)}°</b>`,
+    ansTxt:`${X} ≈ ${f1(ang)}°`,
+  };
+}
+function genProblem(zone){
+  if (zone === 1) return genSide(3, 12, [30,40,45,50,60,70,75,80,100,110,120,130,140]);
+  if (zone === 2) return Math.random() < 0.5 ? genSide(5, 20) : genAngle(4, 15);
+  // Jefe: problemas aplicados
+  if (Math.random() < 0.55){
+    const p = genSide(8, 60), {X,Y,Z,vy,vz,g} = p;
+    p.text = pick([
+      `Dos barcos salen del puerto ${X}. Uno navega ${vy} km hasta ${Z} y el otro ${vz} km hasta ${Y}; sus rutas forman un ángulo de ${g}°. ¿Qué distancia separa a los barcos (${Y}${Z})? <i>(km, 1 decimal)</i>`,
+      `Desde la roca ${X} ves las dos orillas del lago del dragón: ${Z} a ${vy} m y ${Y} a ${vz} m, con ${g}° entre ambas visuales. ¿Cuánto mide el lago de ${Y} a ${Z}? <i>(m, 1 decimal)</i>`,
+      `El dragón cavó un túnel recto de ${Y} a ${Z}. Desde la entrada ${X} hay ${vz} m hasta ${Y} y ${vy} m hasta ${Z}, con un ángulo de ${g}° en ${X}. ¿Cuánto mide el túnel? <i>(m, 1 decimal)</i>`,
+      `Un terreno triangular tiene dos lados de ${vy} m y ${vz} m que forman un ángulo de ${g}° en la esquina ${X}. ¿Cuántos metros de cerca se necesitan para el tercer lado (${Y}${Z})? <i>(1 decimal)</i>`,
+    ]);
+    return p;
+  }
+  const p = genAngle(10, 50), {X, s} = p;
+  p.text = pick([
+    `Tres torres del castillo, A, B y C, forman un triángulo: AB = ${s.c} m, BC = ${s.a} m y CA = ${s.b} m. ¿Qué ángulo se forma en la torre ${X}? <i>(grados, 1 decimal)</i>`,
+    `Un mapa del tesoro marca tres puntos: AB = ${s.c} pasos, BC = ${s.a} pasos y CA = ${s.b} pasos. ¿Cuánto mide el ángulo en el punto ${X}? <i>(grados, 1 decimal)</i>`,
+  ]);
+  return p;
+}
+
+// ======================= ESTADO =======================
+const map = SRC.map(r => r.split(""));
+const MH = map.length, MW = map[0].length;
+const ents = [];
+const P = {x:0,y:0,tx:0,ty:0,prog:0,moving:false,dir:"down",lvl:1,xp:0,hp:20,potions:1,steps:0,sx:0,sy:0,name:""};
+const ST = {correct:0, wrong:0, hints:0, wins:0, t0:0};
+for (let y=0; y<MH; y++) for (let x=0; x<MW; x++){
+  const c = map[y][x];
+  if (c === "P"){ P.x=P.sx=x; P.y=P.sy=y; map[y][x]="."; }
+  else if ("SNKLCB".includes(c)){
+    ents.push({t:c, x, y, open:false, talked:false});
+    map[y][x] = c==="K" ? "_" : c==="B" ? "F" : (map[y][x-1]===";" || map[y][x-1]==='"') ? map[y][x-1] : ".";
+  }
+}
+const SOLID = new Set(["#","~","X","H"]);
+const maxHp = () => 20 + (P.lvl-1)*6;
+const xpNext = () => 20 + (P.lvl-1)*15;
+let state = "title", T = 0, dlg = null, B = null, cooldown = 0;
+let held = [], tap = null; // tap: toque rápido pendiente
+
+// ======================= SONIDO =======================
+let AC = null, muted = false;
+function beep(f, d, type="square", v=0.05, delay=0){
+  if (muted) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const t = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.0001, t+d);
+    o.connect(g).connect(AC.destination); o.start(t); o.stop(t+d+0.02);
+  } catch(e){}
+}
+const sfx = {
+  hit(){ beep(660,.1); beep(990,.18,"square",.05,.09); },
+  hurt(){ beep(180,.25,"sawtooth",.06); beep(110,.3,"sawtooth",.06,.12); },
+  enc(){ [392,330,262,392].forEach((f,i)=>beep(f,.1,"square",.04,i*.08)); },
+  chest(){ [523,659,784,1046].forEach((f,i)=>beep(f,.14,"triangle",.07,i*.1)); },
+  lvl(){ [523,659,784,659,784,1046].forEach((f,i)=>beep(f,.12,"square",.05,i*.09)); },
+  talk(){ beep(880,.04,"square",.03); },
+  win(){ [784,988,1175,1568].forEach((f,i)=>beep(f,.2,"triangle",.07,i*.15)); },
+};
+$("mute").onclick = () => { muted = !muted; $("mute").textContent = muted ? "🔇" : "🔊"; };
+
+// ======================= DIBUJO: MAPA =======================
+function hash(x,y){ let n = (x*374761393 + y*668265263)|0; n = Math.imul(n ^ (n>>>13), 1274126177); return ((n ^ (n>>>16))>>>0)/4294967295; }
+function R(x,y,w,h,c){ ctx.fillStyle=c; ctx.fillRect(x,y,w,h); }
+function ell(x,y,rx,ry,c){ ctx.fillStyle=c; ctx.beginPath(); ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2); ctx.fill(); }
+const cv = $("cv"), ctx = cv.getContext("2d");
+
+function grass(sx,sy,x,y){
+  R(sx,sy,TILE,TILE,"#58b04f");
+  const h = hash(x,y);
+  if (h < 0.5){ R(sx+4+h*20, sy+8+h*14, 2, 4, "#479a3f"); R(sx+18-h*8, sy+20, 2, 4, "#479a3f"); }
+  if (h > 0.93){ R(sx+12, sy+12, 4, 4, "#ffe066"); R(sx+13, sy+13, 2, 2, "#f39c12"); }
+}
+function drawTile(c,x,y,sx,sy){
+  const h = hash(x,y);
+  switch(c){
+    case ".": grass(sx,sy,x,y); break;
+    case '"':
+      R(sx,sy,TILE,TILE,"#4f9e46");
+      for (let i=0;i<4;i++){ const ox = (i*8 + h*6)%28, sway = Math.sin(T/25 + x + i)*1.5;
+        ctx.fillStyle = i%2 ? "#2f7a2a" : "#3a8a33";
+        ctx.beginPath(); ctx.moveTo(sx+ox, sy+30); ctx.lineTo(sx+ox+3+sway, sy+10+h*6); ctx.lineTo(sx+ox+6, sy+30); ctx.fill(); }
+      break;
+    case ";":
+      R(sx,sy,TILE,TILE,"#2d6136");
+      if (h<0.6){ R(sx+5+h*18, sy+6+h*10, 3, 3, "#23502b"); R(sx+20-h*10, sy+22, 3, 2, "#3b7a45"); }
+      if (h>0.95){ R(sx+14,sy+14,5,5,"#c0392b"); R(sx+15,sy+19,3,4,"#eee"); }
+      break;
+    case "#": {
+      const forest = y<11;
+      R(sx,sy,TILE,TILE, forest ? "#2d6136" : "#58b04f");
+      R(sx+13, sy+20, 6, 11, "#6b4423");
+      ell(sx+16, sy+14, 13, 12, forest ? "#174a22" : "#21662b");
+      ell(sx+12, sy+10, 6, 5, forest ? "#22602e" : "#2e8a3a");
+      break; }
+    case "~":
+      R(sx,sy,TILE,TILE,"#2b6cc4");
+      ctx.fillStyle = "#5b9be6";
+      { const o = Math.sin(T/30 + x*0.9 + y*0.6)*4;
+        ctx.fillRect(sx+6+o, sy+10, 8, 2); ctx.fillRect(sx+16-o, sy+22, 9, 2); }
+      break;
+    case "=":
+      R(sx,sy,TILE,TILE,"#2b6cc4");
+      R(sx+3, sy, 26, TILE, "#9c6b3a");
+      for (let i=0;i<4;i++) R(sx+3, sy+i*8+7, 26, 1, "#6e4a26");
+      R(sx+2, sy, 2, TILE, "#5a3a1c"); R(sx+28, sy, 2, TILE, "#5a3a1c");
+      break;
+    case "_":
+      R(sx,sy,TILE,TILE,"#d1b077");
+      if (h<0.5) R(sx+6+h*30, sy+10+h*20, 3, 2, "#b8955c");
+      break;
+    case "X":
+      R(sx,sy,TILE,TILE,"#6b6b7a");
+      ctx.fillStyle = "#4e4e5c";
+      for (let r=0;r<4;r++){ ctx.fillRect(sx, sy+r*8, TILE, 1); const off = r%2 ? 0 : 8; ctx.fillRect(sx+off, sy+r*8, 1, 8); ctx.fillRect(sx+off+16, sy+r*8, 1, 8); }
+      if (map[y-1] && map[y-1][x] !== "X"){ R(sx, sy, TILE, 5, "#8a8a9a"); for (let i=0;i<4;i++) R(sx+i*8, sy-4, 5, 5, "#8a8a9a"); }
+      break;
+    case "F":
+      R(sx,sy,TILE,TILE,"#3b3346"); R(sx,sy,TILE,1,"#2c2636"); R(sx,sy,1,TILE,"#2c2636");
+      if ((x+y)%2) R(sx+2,sy+2,28,28,"#41384d");
+      break;
+    case "H": {
+      const top = map[y-1][x] !== "H";
+      if (top){
+        R(sx,sy,TILE,TILE,"#58b04f");
+        ctx.fillStyle = "#b5402f"; ctx.fillRect(sx, sy+6, TILE, 26);
+        ctx.fillStyle = "#8e2f22"; for (let i=0;i<3;i++) ctx.fillRect(sx, sy+12+i*7, TILE, 2);
+      } else {
+        R(sx,sy,TILE,TILE,"#e9d8b4"); R(sx, sy, TILE, 2, "#c4b08a");
+        const door = map[y][x-1]==="H" && map[y][x+1]==="H";
+        if (door){ R(sx+9, sy+10, 14, 22, "#6b4423"); R(sx+19, sy+20, 2, 2, "#ffd447"); }
+        else { R(sx+8, sy+9, 16, 12, "#4a90d9"); R(sx+15, sy+9, 2, 12, "#c4b08a"); R(sx+8, sy+14, 16, 2, "#c4b08a"); }
+      }
+      break; }
+  }
+}
+
+function drawPerson(sx,sy,o){
+  ell(sx+16, sy+30, 9, 3, "rgba(0,0,0,.25)");
+  R(sx+8, sy+13, 16, 17, o.robe);
+  R(sx+8, sy+27, 16, 3, o.robe2 || "rgba(0,0,0,.2)");
+  R(sx+10, sy+4, 12, 10, "#f2c49b");
+  R(sx+9, sy+2, 14, 4, o.hair || "#5a3418");
+  if (o.longHair){ R(sx+8, sy+4, 3, 12, o.hair); R(sx+21, sy+4, 3, 12, o.hair); }
+  R(sx+12, sy+8, 2, 2, "#222"); R(sx+18, sy+8, 2, 2, "#222");
+  if (o.beard){ R(sx+10, sy+11, 12, 8, "#f4f4f4"); R(sx+12, sy+19, 8, 3, "#f4f4f4"); }
+  if (o.hat){ ctx.fillStyle = o.robe; ctx.beginPath(); ctx.moveTo(sx+7,sy+5); ctx.lineTo(sx+16,sy-12); ctx.lineTo(sx+25,sy+5); ctx.fill(); R(sx+15, sy-6, 3, 3, "#ffd447"); }
+  if (o.helmet){ R(sx+9, sy+1, 14, 6, "#b9bec7"); R(sx+15, sy-3, 3, 5, "#c0392b"); }
+  if (o.spear){ R(sx+26, sy-2, 2, 32, "#7a4a1f"); ctx.fillStyle="#dfe4ea"; ctx.beginPath(); ctx.moveTo(sx+24,sy-1); ctx.lineTo(sx+27,sy-9); ctx.lineTo(sx+30,sy-1); ctx.fill(); }
+}
+function drawHero(sx,sy){
+  const d = P.dir, step = P.moving ? Math.floor(T/5)%2 : 0;
+  ell(sx+16, sy+30, 9, 3, "rgba(0,0,0,.25)");
+  R(sx+11, sy+22+step, 4, 7, "#3a2a1a"); R(sx+17, sy+23-step, 4, 7, "#3a2a1a");
+  R(sx+9, sy+14, 14, 10, "#2d7dd2"); R(sx+9, sy+20, 14, 2, "#7a4a1f");
+  R(sx+10, sy+5, 12, 10, "#f2c49b");
+  R(sx+9, sy+3, 14, 4, "#5a3418");
+  if (d==="up") R(sx+10, sy+5, 12, 8, "#5a3418");
+  if (d==="down"){ R(sx+12, sy+9, 2, 2, "#222"); R(sx+18, sy+9, 2, 2, "#222"); }
+  if (d==="left"){ R(sx+11, sy+9, 2, 2, "#222"); R(sx+19, sy+5, 3, 6, "#5a3418"); }
+  if (d==="right"){ R(sx+19, sy+9, 2, 2, "#222"); R(sx+10, sy+5, 3, 6, "#5a3418"); }
+  R(sx+8, sy+3, 16, 2, "#e74c3c"); // cinta
+  if (d!=="left") { R(sx+23, sy+12, 2, 12, "#dfe4ea"); R(sx+21, sy+19, 6, 2, "#ffd447"); }
+}
+function drawChest(sx,sy,open){
+  ell(sx+16, sy+28, 11, 3, "rgba(0,0,0,.25)");
+  R(sx+5, sy+12, 22, 16, "#8b5a2b"); R(sx+5, sy+18, 22, 2, "#ffd447");
+  if (open){ R(sx+5, sy+6, 22, 6, "#5a3a1c"); R(sx+7, sy+12, 18, 4, "#2a1a0a"); }
+  else { R(sx+5, sy+8, 22, 6, "#a0692f"); R(sx+14, sy+15, 4, 5, "#ffd447"); }
+}
+
+function drawMap(){
+  const px = (P.x + (P.tx-P.x)*P.prog)*TILE, py = (P.y + (P.ty-P.y)*P.prog)*TILE;
+  const camX = Math.max(0, Math.min(MW*TILE - VW*TILE, px - VW*TILE/2 + TILE/2));
+  const camY = Math.max(0, Math.min(MH*TILE - VH*TILE, py - VH*TILE/2 + TILE/2));
+  const x0 = Math.floor(camX/TILE), y0 = Math.floor(camY/TILE);
+  for (let y=y0; y<=y0+VH && y<MH; y++) for (let x=x0; x<=x0+VW && x<MW; x++)
+    drawTile(map[y][x], x, y, Math.round(x*TILE-camX), Math.round(y*TILE-camY));
+  const list = ents.map(e=>({y:e.y, f:()=>drawEnt(e, Math.round(e.x*TILE-camX), Math.round(e.y*TILE-camY))}));
+  list.push({y:py/TILE, f:()=>drawHero(Math.round(px-camX), Math.round(py-camY))});
+  list.sort((a,b)=>a.y-b.y).forEach(o=>o.f());
+}
+function drawEnt(e,sx,sy){
+  const bob = Math.sin(T/15 + e.x)*1;
+  if (e.t==="S") drawPerson(sx,sy+bob,{robe:"#7b4bb7", hair:"#ddd", beard:true, hat:true});
+  if (e.t==="N") drawPerson(sx,sy+bob,{robe:"#d9534f", hair:"#8b4513", longHair:true});
+  if (e.t==="K"||e.t==="L") drawPerson(sx,sy,{robe:"#7d8590", helmet:true, spear:true});
+  if (e.t==="C") drawChest(sx,sy,e.open);
+  if (e.t==="B") drawDragon(sx+16, sy+14 + Math.sin(T/12)*2, 0.22);
+  if ((e.t==="S"||e.t==="N") && !e.talked){
+    ctx.font = "12px 'Press Start 2P'"; ctx.fillStyle = "#ffd447"; ctx.textAlign="center";
+    ctx.fillText("!", sx+16, sy-6 + Math.sin(T/8)*2);
+  }
+}
+
+// ======================= DIBUJO: MONSTRUOS =======================
+function eyes(x1,x2,y,r,pupil="#111"){ ell(x1,y,r,r,"#fff"); ell(x2,y,r,r,"#fff"); ell(x1+1,y+1,r*0.5,r*0.5,pupil); ell(x2+1,y+1,r*0.5,r*0.5,pupil); }
+function drawMonster(m,cx,cy,t){
+  ctx.save(); ctx.translate(cx,cy);
+  if (m.kind==="slime"){
+    const sq = Math.sin(t/8)*4;
+    ell(0, 60, 60, 10, "rgba(0,0,0,.25)");
+    ctx.fillStyle = m.color; ctx.beginPath();
+    ctx.moveTo(-60-sq, 58); ctx.quadraticCurveTo(-58, -30+sq, 0, -45+sq); ctx.quadraticCurveTo(58, -30+sq, 60+sq, 58); ctx.closePath(); ctx.fill();
+    ell(-22, -15+sq, 10, 6, "rgba(255,255,255,.45)");
+    eyes(-18, 18, 8+sq/2, 11); R(-10, 30+sq/2, 20, 4, "#222");
+  } else if (m.kind==="bat"){
+    const fl = Math.sin(t/4)*22, y = Math.sin(t/10)*10;
+    ell(0, 75, 40, 8, "rgba(0,0,0,.25)");
+    ctx.fillStyle = "#4b2a6e";
+    ctx.beginPath(); ctx.moveTo(-20,y); ctx.lineTo(-100,y-30-fl); ctx.lineTo(-80,y+10); ctx.lineTo(-60,y); ctx.lineTo(-40,y+20); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(20,y); ctx.lineTo(100,y-30-fl); ctx.lineTo(80,y+10); ctx.lineTo(60,y); ctx.lineTo(40,y+20); ctx.fill();
+    ell(0, y, 34, 32, m.color);
+    ctx.fillStyle = m.color; ctx.beginPath(); ctx.moveTo(-26,y-20); ctx.lineTo(-20,y-50); ctx.lineTo(-8,y-26); ctx.moveTo(26,y-20); ctx.lineTo(20,y-50); ctx.lineTo(8,y-26); ctx.fill();
+    eyes(-12, 12, y-4, 8, "#c0392b");
+    R(-8, y+14, 4, 6, "#fff"); R(4, y+14, 4, 6, "#fff");
+  } else if (m.kind==="ghost"){
+    const y = Math.sin(t/12)*10;
+    ell(0, 80, 40, 8, "rgba(0,0,0,.2)");
+    ctx.fillStyle = "rgba(220,235,255,.88)"; ctx.beginPath();
+    ctx.moveTo(-50, y+50); ctx.lineTo(-50, y-10); ctx.arc(0, y-10, 50, Math.PI, 0); ctx.lineTo(50, y+50);
+    for (let i=0;i<5;i++){ const xx = 50 - i*20; ctx.quadraticCurveTo(xx-5, y+65 + Math.sin(t/5+i)*6, xx-20, y+50); }
+    ctx.fill();
+    ell(-18, y-12, 9, 12, "#1b1a2e"); ell(18, y-12, 9, 12, "#1b1a2e"); ell(0, y+18, 10, 7, "#1b1a2e");
+    ctx.font = "bold 16px serif"; ctx.fillStyle="#7b4bb7"; ctx.textAlign="center"; ctx.fillText("rad", 0, y-40);
+  } else if (m.kind==="golem"){
+    const b = Math.sin(t/14)*3;
+    ell(0, 78, 70, 10, "rgba(0,0,0,.25)");
+    R(-62, -10+b, 26, 60, "#76737f"); R(36, -10+b, 26, 60, "#76737f");
+    R(-40, -20+b, 80, 75, m.color); R(-30, 55, 22, 22, "#6b6875"); R(8, 55, 22, 22, "#6b6875");
+    R(-28, -70+b, 56, 50, "#a19eae");
+    R(-18, -55+b, 12, 8, "#ffcc00"); R(6, -55+b, 12, 8, "#ffcc00");
+    ctx.strokeStyle = "#ffcc00"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-20,40+b); ctx.lineTo(20,40+b); ctx.lineTo(-20,0+b); ctx.closePath(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(-20, 40+b, 10, -Math.PI/2, 0); ctx.stroke();
+  } else if (m.kind==="dragon"){
+    ctx.restore(); drawDragon(cx, cy + Math.sin(t/12)*5, 1.05, t); return;
+  }
+  ctx.restore();
+}
+function drawDragon(cx,cy,s,t=T){
+  ctx.save(); ctx.translate(cx,cy); ctx.scale(s,s);
+  const fl = Math.sin(t/8)*12;
+  ell(0, 82, 80, 12, "rgba(0,0,0,.25)");
+  ctx.fillStyle = "#8b1e2d";
+  ctx.beginPath(); ctx.moveTo(-25,-15); ctx.lineTo(-120,-80-fl); ctx.lineTo(-100,-20); ctx.lineTo(-115,5); ctx.lineTo(-40,25); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(25,-15); ctx.lineTo(120,-80-fl); ctx.lineTo(100,-20); ctx.lineTo(115,5); ctx.lineTo(40,25); ctx.fill();
+  ctx.strokeStyle = "#d63a3a"; ctx.lineWidth = 14; ctx.lineCap = "round";
+  ctx.beginPath(); ctx.moveTo(30,60); ctx.quadraticCurveTo(90,80,95,40); ctx.stroke();
+  ell(0, 20, 48, 58, "#d63a3a");
+  ell(0, 30, 28, 42, "#f5c26b");
+  for (let i=0;i<4;i++) R(-20, 4+i*14, 40, 2, "#e0a64f");
+  R(-40, 62, 22, 20, "#b32d2d"); R(18, 62, 22, 20, "#b32d2d");
+  ell(0, -52, 36, 28, "#d63a3a");
+  ctx.fillStyle = "#f1e4c3";
+  ctx.beginPath(); ctx.moveTo(-26,-70); ctx.lineTo(-38,-104); ctx.lineTo(-14,-76); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(26,-70); ctx.lineTo(38,-104); ctx.lineTo(14,-76); ctx.fill();
+  ell(-14, -58, 9, 8, "#ffd447"); ell(14, -58, 9, 8, "#ffd447");
+  R(-15, -64, 3, 12, "#111"); R(13, -64, 3, 12, "#111");
+  ell(0, -36, 22, 12, "#e45252");
+  R(-8, -38, 3, 3, "#5a1010"); R(5, -38, 3, 3, "#5a1010");
+  ctx.fillStyle = "#fff";
+  ctx.beginPath(); ctx.moveTo(-14,-28); ctx.lineTo(-10,-20); ctx.lineTo(-6,-28); ctx.moveTo(6,-28); ctx.lineTo(10,-20); ctx.lineTo(14,-28); ctx.fill();
+  ctx.restore();
+}
+
+// ======================= DIBUJO: TRIÁNGULO =======================
+function pill(text,x,y,color,bg){
+  ctx.font = "bold 17px system-ui, sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+  const w = ctx.measureText(text).width + 10;
+  ctx.fillStyle = bg; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x-w/2, y-12, w, 24, 5) : ctx.rect(x-w/2, y-12, w, 24); ctx.fill();
+  ctx.fillStyle = color; ctx.fillText(text, x, y+1);
+}
+function drawTri(p,bx,by,bw,bh){
+  ctx.fillStyle = "#f4e6c3"; ctx.strokeStyle = "#8a6a3a"; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(bx,by,bw,bh,10) : ctx.rect(bx,by,bw,bh); ctx.fill(); ctx.stroke();
+  ctx.font = "9px 'Press Start 2P'"; ctx.fillStyle = "#8a6a3a"; ctx.textAlign="left"; ctx.textBaseline="alphabetic";
+  ctx.fillText("Diagrama (no a escala exacta)", bx+10, by+bh-10);
+  const {a,b,c} = p.s, A = p.an.A*Math.PI/180;
+  const raw = {A:[0,0], B:[c,0], C:[b*Math.cos(A), -b*Math.sin(A)]};
+  const xs = Object.values(raw).map(v=>v[0]), ys = Object.values(raw).map(v=>v[1]);
+  const minx=Math.min(...xs), maxx=Math.max(...xs), miny=Math.min(...ys), maxy=Math.max(...ys);
+  const pad = 48, sc = Math.min((bw-2*pad)/(maxx-minx), (bh-2*pad-14)/Math.max(maxy-miny, 0.001));
+  const ox = bx + bw/2 - (minx+maxx)/2*sc, oy = by + (bh-14)/2 - (miny+maxy)/2*sc;
+  const V = {}; for (const k of LET) V[k] = [ox + raw[k][0]*sc, oy + raw[k][1]*sc];
+  const G = [(V.A[0]+V.B[0]+V.C[0])/3, (V.A[1]+V.B[1]+V.C[1])/3];
+  ctx.fillStyle = "rgba(91,155,230,.18)"; ctx.beginPath(); ctx.moveTo(...V.A); ctx.lineTo(...V.B); ctx.lineTo(...V.C); ctx.closePath(); ctx.fill();
+  // ángulos
+  for (const k of LET){
+    const lbl = p.lab.angles[k]; if (!lbl) continue;
+    const [o1,o2] = LET.filter(j=>j!==k), v = V[k];
+    const a1 = Math.atan2(V[o1][1]-v[1], V[o1][0]-v[0]), a2 = Math.atan2(V[o2][1]-v[1], V[o2][0]-v[0]);
+    let d = a2 - a1; while (d > Math.PI) d -= 2*Math.PI; while (d < -Math.PI) d += 2*Math.PI;
+    const len = Math.min(Math.hypot(V[o1][0]-v[0], V[o1][1]-v[1]), Math.hypot(V[o2][0]-v[0], V[o2][1]-v[1]));
+    const r = Math.min(26, len*0.3), ask = lbl === "?";
+    ctx.strokeStyle = ask ? "#d62839" : "#2a7a3a"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(v[0], v[1], r, a1, a1+d, d<0); ctx.stroke();
+    const mid = a1 + d/2;
+    pill(ask ? `${k} = ?` : lbl, v[0] + Math.cos(mid)*(r+30), v[1] + Math.sin(mid)*(r+22),ask ? "#fff" : "#1d5a2a", ask ? "#d62839" : "rgba(255,255,255,.85)");
+  }
+  ctx.strokeStyle = "#3a2a1a"; ctx.lineWidth = 3; ctx.lineJoin = "round";
+  ctx.beginPath(); ctx.moveTo(...V.A); ctx.lineTo(...V.B); ctx.lineTo(...V.C); ctx.closePath(); ctx.stroke();
+  // vértices
+  for (const k of LET){
+    const v = V[k], dx = v[0]-G[0], dy = v[1]-G[1], n = Math.hypot(dx,dy) || 1;
+    ctx.font = "bold 18px serif"; ctx.fillStyle = "#3a2a1a"; ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText(k, v[0] + dx/n*16, v[1] + dy/n*16);
+  }
+  // lados
+  const ends = {a:["B","C"], b:["A","C"], c:["A","B"]};
+  for (const s of ["a","b","c"]){
+    const lbl = p.lab.sides[s]; if (lbl === undefined) continue;
+    const [u,w] = ends[s], mx = (V[u][0]+V[w][0])/2, my = (V[u][1]+V[w][1])/2;
+    let nx = -(V[w][1]-V[u][1]), ny = V[w][0]-V[u][0]; const nn = Math.hypot(nx,ny) || 1; nx/=nn; ny/=nn;
+    if ((mx-G[0])*nx + (my-G[1])*ny < 0){ nx=-nx; ny=-ny; }
+    const ask = lbl === "?";
+    pill(`${s} = ${lbl}`, mx + nx*18, my + ny*18, ask ? "#fff" : "#1b3a6b", ask ? "#d62839" : "rgba(255,255,255,.85)");
+  }
+  ctx.textBaseline = "alphabetic";
+}
+
+// ======================= DIBUJO: BATALLA Y HUD =======================
+function drawBattle(){
+  const bg = {1:["#8fd3ff","#5bb04f","#478f3e"], 2:["#1d3b2a","#2d6136","#1f4727"], boss:["#2a1035","#4b2a4f","#3b3346"]}[B.zone];
+  const g = ctx.createLinearGradient(0,0,0,480); g.addColorStop(0,bg[0]); g.addColorStop(0.55,bg[0]); g.addColorStop(0.551,bg[1]); g.addColorStop(1,bg[2]);
+  ctx.fillStyle = g; ctx.fillRect(0,0,640,480);
+  if (B.zone===1){ ell(90,90,40,14,"rgba(255,255,255,.8)"); ell(250,60,50,16,"rgba(255,255,255,.7)"); }
+  if (B.zone===2){ for (let i=0;i<7;i++){ R(i*95+10, 120, 14, 150, "#14301c"); ell(i*95+17, 120, 40, 50, "#12391d"); } }
+  if (B.zone==="boss"){ for (let i=0;i<5;i++){ R(i*140+20, 80, 40, 190, "#3a2445"); R(i*140+28, 100, 24, 30, "#ffb347"); } }
+  ell(170, 330, 130, 26, "rgba(0,0,0,.18)");
+  if (B.hp > 0 || B.flash > 0){
+    ctx.save();
+    if (B.flash > 0 && Math.floor(B.flash/3)%2===0) ctx.globalAlpha = 0.25;
+    drawMonster(B.m, 170, 250, T);
+    ctx.restore();
+  }
+  // caja del monstruo
+  ctx.fillStyle = "rgba(15,14,23,.8)"; ctx.fillRect(16, 384, 300, 76);
+  ctx.strokeStyle = "#fff"; ctx.lineWidth = 3; ctx.strokeRect(16, 384, 300, 76);
+  ctx.font = "11px 'Press Start 2P'"; ctx.fillStyle = "#fff"; ctx.textAlign = "left";
+  ctx.fillText(B.m.name, 28, 410);
+  for (let i=0;i<B.m.hits;i++){ ctx.font = "20px serif"; ctx.fillStyle = i < B.hp ? "#ff5d6c" : "#555"; ctx.fillText("♥", 28 + i*26, 444); }
+  drawTri(B.prob, 330, 76, 296, 330);
+  // efectos
+  B.fx = B.fx.filter(f => f.t > 0);
+  for (const f of B.fx){ f.t--; f.y -= 0.8; ctx.globalAlpha = Math.min(1, f.t/20);
+    ctx.font = "16px 'Press Start 2P'"; ctx.textAlign = "center"; ctx.fillStyle = "#000"; ctx.fillText(f.text, f.x+2, f.y+2); ctx.fillStyle = f.c; ctx.fillText(f.text, f.x, f.y); ctx.globalAlpha = 1; }
+  if (B.flash > 0) B.flash--;
+  if (B.intro > 0){ ctx.fillStyle = `rgba(255,255,255,${B.intro/25})`; ctx.fillRect(0,0,640,480); B.intro--; }
+}
+function drawHUD(){
+  ctx.fillStyle = "rgba(15,14,23,.78)"; ctx.fillRect(8, 8, 232, 60);
+  ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.strokeRect(8, 8, 232, 60);
+  ctx.font = "10px 'Press Start 2P'"; ctx.textAlign = "left"; ctx.fillStyle = "#ffd447";
+  ctx.fillText(`Nv ${P.lvl}`, 18, 28);
+  ctx.fillStyle = "#fff"; ctx.fillText(`HP ${P.hp}/${maxHp()}`, 80, 28);
+  R(18, 36, 212, 8, "#444"); R(18, 36, 212*P.hp/maxHp(), 8, P.hp/maxHp() > 0.3 ? "#5ce07a" : "#ff5d6c");
+  R(18, 50, 150, 6, "#444"); R(18, 50, 150*Math.min(1,P.xp/xpNext()), 6, "#4fa3ff");
+  ctx.font = "8px 'Press Start 2P'"; ctx.fillStyle = "#b8b5d1"; ctx.fillText("XP", 172, 57);
+  ctx.font = "13px serif"; ctx.fillStyle = "#fff"; ctx.fillText(`🧪×${P.potions}`, 194, 59);
+}
+
+// ======================= LÓGICA DE MAPA =======================
+const DIRS = {up:[0,-1], down:[0,1], left:[-1,0], right:[1,0]};
+const entAt = (x,y) => ents.find(e => e.x===x && e.y===y);
+const solidTile = (x,y) => x<0 || y<0 || x>=MW || y>=MH || SOLID.has(map[y][x]);
+function updateMap(){
+  if (cooldown > 0){ cooldown--; return; }
+  if (P.moving){
+    P.prog += 0.125;
+    if (P.prog >= 1){ P.moving=false; P.x=P.tx; P.y=P.ty; P.prog=0; onStep(); }
+    return;
+  }
+  const d = held[held.length-1] || tap; tap = null; if (!d) return;
+  P.dir = d; const [dx,dy] = DIRS[d], nx = P.x+dx, ny = P.y+dy;
+  const e = entAt(nx,ny);
+  if (e){ interact(e); return; }
+  if (!solidTile(nx,ny)){ P.moving=true; P.tx=nx; P.ty=ny; P.prog=0; }
+}
+function onStep(){
+  P.steps++;
+  const c = map[P.y][P.x];
+  if ((c==='"' || c===";") && P.steps > 3 && Math.random() < PROB_ENCUENTRO){ P.steps = 0; startBattle(c==='"' ? 1 : 2); }
+}
+function actionFace(){
+  const [dx,dy] = DIRS[P.dir], e = entAt(P.x+dx, P.y+dy);
+  if (e) interact(e);
+}
+function interact(e){
+  held = []; tap = null;
+  if (e.t==="S"){ e.talked=true; say(TXT.S, "Sabio Coseno"); }
+  else if (e.t==="N"){ e.talked=true; say(TXT.N, "Aldeana Ana"); }
+  else if (e.t==="K"||e.t==="L"){
+    const need = e.t==="K" ? NIVEL_BOSQUE : NIVEL_CASTILLO;
+    if (P.lvl >= need) say(TXT[e.t+"yes"], "Guardia", () => { ents.splice(ents.indexOf(e),1); renderMapUI(); });
+    else say(TXT[e.t+"no"], "Guardia");
+  }
+  else if (e.t==="C"){
+    if (e.open) say(["El cofre está vacío."], "Cofre");
+    else { e.open=true; P.potions += 2; sfx.chest(); say(["¡Encontraste 2 pociones! 🧪🧪", "Úsalas en batalla para recuperar 15 HP."], "Cofre"); }
+  }
+  else if (e.t==="B") say(TXT.B, "Dragón Trigonométrico", () => startBattle("boss"));
+}
+
+// ======================= DIÁLOGOS Y UI =======================
+const ui = $("ui");
+function say(lines, who, done){ dlg = {lines, who, i:0, done}; state="dialog"; held=[]; sfx.talk(); renderDialog(); }
+function renderDialog(){
+  ui.innerHTML = `<div class="dlg" id="dlgBox"><b>${dlg.who||""}</b><div>${dlg.lines[dlg.i]}</div><span class="nx">▼</span></div>`;
+  $("dlgBox").onclick = advance;
+}
+function advance(){
+  if (!dlg) return;
+  dlg.i++; sfx.talk();
+  if (dlg.i >= dlg.lines.length){
+    const d = dlg.done; dlg = null; state = "map"; cooldown = 6; held = []; tap = null;
+    renderMapUI(); if (d) d();
+  } else renderDialog();
+}
+function objective(){
+  if (P.lvl < NIVEL_BOSQUE) return `Entrena en la hierba alta (este de la aldea) hasta nivel ${NIVEL_BOSQUE}.`;
+  if (ents.some(e=>e.t==="K")) return "Habla con el guardia del puente del río (norte).";
+  if (P.lvl < NIVEL_CASTILLO) return `Entrena en el Bosque Sombrío hasta nivel ${NIVEL_CASTILLO}.`;
+  return "Ve al castillo del lago (noroeste) y derrota al Dragón.";
+}
+function renderMapUI(){
+  if (state !== "map") return;
+  const tot = ST.correct + ST.wrong;
+  ui.innerHTML = `<div class="info"><div>🎯 <span class="obj">${objective()}</span></div>
+    <small>Aciertos: ${ST.correct}/${tot} · Monstruos vencidos: ${ST.wins} · XP: ${P.xp}/${xpNext()}</small>
+    <div class="row"><button id="bForm">📜 Ver fórmulas</button></div></div>`;
+  $("bForm").onclick = () => say(TXT.formulas, "Pergamino");
+}
+
+// ======================= BATALLA =======================
+function startBattle(zone){
+  const m = zone==="boss" ? {...MONS.boss} : {...pick(MONS[zone])};
+  B = {m, zone, hp:m.hits, fx:[], flash:0, intro:25, usedHint:false, calcOpen:false, phase:"ask"};
+  state = "battle"; held = []; tap = null; sfx.enc();
+  newQuestion(true);
+}
+function newQuestion(first){
+  B.prob = genProblem(B.zone); B.hint = 0; B.phase = "ask";
+  B.note = first ? `¡Un <b>${B.m.name}</b> aparece! Resuelve el triángulo para atacar.` : "";
+  renderBattle();
+}
+function renderBattle(){
+  const p = B.prob, tgt = B.calcOpen && B.target === "calc" ? "calc" : "ans";
+  if (B.phase === "ask"){
+    const prev = $("ans") ? $("ans").value : "", calcPrev = $("calcIn") ? $("calcIn").value : "";
+    ui.innerHTML = `
+      ${B.note ? `<div style="color:#b8b5d1;margin-bottom:6px">${B.note}</div>` : ""}
+      <div class="q">${p.text}</div>
+      <div class="hintbox">${p.hints.slice(0,B.hint).map((h,i)=>`💡 ${i?"Sustituye":"Fórmula"}: ${h}`).join("<br>")}</div>
+      <form class="row" id="af" autocomplete="off"><input id="ans" ${TOUCH?'inputmode="none"':'inputmode="decimal"'} class="${tgt==="ans"?"tgt":""}" placeholder="Tu respuesta${p.unit?" (°)":""}" value="${prev}"><button type="submit">⚔️ Atacar</button></form>
+      ${TOUCH ? keypadHTML(tgt) : ""}
+      <div class="row btns">
+        <button id="bHint" ${B.hint>=2?"disabled":""}>💡 Pista</button>
+        <button id="bPot">🧪 Poción (${P.potions})</button>
+        <button id="bCalc">🧮 Calculadora</button>
+        <button id="bRun">🏃 Huir</button>
+      </div>
+      <div class="calc" id="calc" ${B.calcOpen?"":"hidden"}>
+        <small>Calculadora en GRADOS. Usa sqrt( ), cos( ), acos( ), ^ para potencias. Ej: <code>sqrt(5^2+7^2-2*5*7*cos(40))</code></small>
+        <input id="calcIn" ${TOUCH?'inputmode="none"':''} class="${tgt==="calc"?"tgt":""}" placeholder="${TOUCH?"Toca aquí y usa el teclado de arriba":"Escribe una operación"}" value="${calcPrev.replace(/"/g,"&quot;")}">
+        <div class="calcout" id="calcOut"></div>
+      </div>`;
+    $("af").onsubmit = ev => { ev.preventDefault(); submit(); };
+    $("bHint").onclick = () => { if (B.hint<2){ if (B.hint===0) ST.hints++; B.hint++; B.usedHint = true; B.note = "Usar pistas reduce a la mitad la XP de esta batalla."; renderBattle(); } };
+    $("bPot").onclick = () => {
+      if (P.potions <= 0) B.note = "No tienes pociones. Búscalas en los cofres.";
+      else if (P.hp >= maxHp()) B.note = "Tu HP ya está lleno.";
+      else { P.potions--; P.hp = Math.min(maxHp(), P.hp+15); B.note = "Bebiste una poción: +15 HP."; sfx.chest(); }
+      renderBattle();
+    };
+    $("bCalc").onclick = () => { B.calcOpen = !B.calcOpen; B.target = B.calcOpen ? "calc" : "ans"; renderBattle(); if (B.calcOpen && !TOUCH) $("calcIn").focus(); };
+    if (TOUCH){
+      $("ans").onpointerdown = () => { if (B.target !== "ans"){ B.target = "ans"; renderBattle(); } };
+      $("calcIn").onpointerdown = () => { if (B.target !== "calc"){ B.target = "calc"; renderBattle(); } };
+      ui.querySelectorAll(".kp button").forEach(b => b.onclick = () => kpPress(b.dataset.k));
+    }
+    $("bRun").onclick = () => {
+      if (B.zone === "boss"){ B.note = "¡No puedes huir del Dragón!"; renderBattle(); return; }
+      endBattle(); say(["Escapaste a salvo."], "");
+    };
+    const ci = $("calcIn"); ci.oninput = () => updCalc(); updCalc();
+    if (!B.calcOpen && matchMedia("(pointer:fine)").matches) $("ans").focus();
+  } else {
+    ui.innerHTML = `<div class="res ${B.lastOk?"ok":"bad"}">${B.msg}</div>
+      <div class="sol">📐 ${p.sol}</div>
+      <button id="bNext" class="main">CONTINUAR ▶</button>`;
+    $("bNext").onclick = next; $("bNext").focus();
+  }
+}
+function keypadHTML(tgt){
+  const base = ["1","2","3","4","5","6","7","8","9","0",".","⌫"];
+  const fx = ["(",")","^","√","cos","acos","+","−","×","÷","C","➜ Resp."];
+  const keys = tgt === "calc" ? fx.concat(base) : base;
+  return `<div class="kp">${keys.map(k => `<button type="button" data-k="${k}" class="${k==="⌫"||k==="C"?"del":k==="➜ Resp."?"use":fx.includes(k)?"fx":""}">${k}</button>`).join("")}</div>`;
+}
+function kpPress(k){
+  const el = $(B.calcOpen && B.target === "calc" ? "calcIn" : "ans"); if (!el) return;
+  const rep = {"√":"sqrt(", "cos":"cos(", "acos":"acos(", "×":"*", "÷":"/", "−":"-"};
+  if (k === "⌫") el.value = el.value.slice(0,-1);
+  else if (k === "C") el.value = "";
+  else if (k === "➜ Resp."){
+    try { const r = calcEval(el.value); if (isFinite(r)){ $("ans").value = String(+r.toFixed(4)); B.target = "ans"; renderBattle(); } } catch(e){}
+    return;
+  } else el.value += rep[k] || k;
+  if (el.id === "calcIn") updCalc();
+}
+function updCalc(){
+  const ci = $("calcIn"), out = $("calcOut"); if (!ci) return;
+  if (!ci.value.trim()){ out.textContent = ""; return; }
+  try { const v = calcEval(ci.value); out.textContent = isFinite(v) ? "= " + (+v.toFixed(6)) : "…"; }
+  catch(e){ out.textContent = "…"; }
+}
+function calcEval(s){
+  s = s.toLowerCase().replace(/,/g,".").replace(/×/g,"*").replace(/÷/g,"/").replace(/√/g,"sqrt").replace(/π/g,"pi").replace(/arccos/g,"acos").replace(/cos\^-1|cos⁻¹/g,"acos");
+  if (!/^[0-9+\-*/^().\sa-z]*$/.test(s)) throw 0;
+  const ok = ["sqrt","cos","sin","tan","acos","asin","atan","pi"];
+  if ((s.match(/[a-z]+/g)||[]).some(w => !ok.includes(w))) throw 0;
+  s = s.replace(/\^/g,"**");
+  const d = Math.PI/180;
+  return new Function(...ok, `return (${s});`)(Math.sqrt, x=>Math.cos(x*d), x=>Math.sin(x*d), x=>Math.tan(x*d), x=>Math.acos(x)/d, x=>Math.asin(x)/d, x=>Math.atan(x)/d, Math.PI);
+}
+function submit(){
+  const inp = $("ans"), v = parseFloat(inp.value.replace(",", ".").replace("°",""));
+  if (isNaN(v)){ inp.classList.remove("shake"); void inp.offsetWidth; inp.classList.add("shake"); return; }
+  const p = B.prob, ok = Math.abs(v - p.answer) <= p.tol;
+  if (ok){
+    ST.correct++; B.hp--; B.flash = 24; sfx.hit();
+    B.fx.push({text:"¡ZAS!", x:170, y:150, t:50, c:"#ffd447"});
+    B.msg = `✔ ¡Correcto! ${p.ansTxt}${p.unit}. Golpeas al ${B.m.name}.`;
+  } else {
+    ST.wrong++; P.hp = Math.max(0, P.hp - B.m.dmg); sfx.hurt(); shakeScreen();
+    B.fx.push({text:`-${B.m.dmg} HP`, x:170, y:140, t:50, c:"#ff5d6c"});
+    B.msg = `✘ Respondiste ${v}, pero la respuesta es ${p.ansTxt}${p.unit}. El ${B.m.name} te ataca: −${B.m.dmg} HP.`;
+  }
+  B.lastOk = ok; B.phase = "result"; B.resAt = performance.now(); renderBattle();
+}
+function next(){
+  if (performance.now() - B.resAt < 250) return;
+  if (B.hp <= 0) return win();
+  if (P.hp <= 0) return lose();
+  newQuestion(false);
+}
+function endBattle(){ state = "map"; B = null; P.steps = 0; cooldown = 10; held = []; tap = null; renderMapUI(); }
+function win(){
+  const m = B.m, gain = Math.round(m.xp * (B.usedHint ? 0.5 : 1)), boss = B.zone === "boss";
+  ST.wins++; P.xp += gain;
+  const lines = [`¡Venciste al ${m.name}! Ganas ${gain} XP${B.usedHint ? " (mitad por usar pistas)" : ""}.`];
+  let up = false;
+  while (P.xp >= xpNext()){ P.xp -= xpNext(); P.lvl++; up = true; }
+  if (up){ P.hp = maxHp(); lines.push(`⭐ ¡Subiste a NIVEL ${P.lvl}! HP máximo: ${maxHp()} (restaurado).`); sfx.lvl(); }
+  if (!boss && Math.random() < 0.25){ P.potions++; lines.push("El monstruo soltó una poción 🧪."); }
+  if (P.lvl === NIVEL_BOSQUE && up) lines.push("Ya puedes cruzar el puente del río. Habla con el guardia.");
+  if (P.lvl === NIVEL_CASTILLO && up) lines.push("Ya puedes entrar al castillo del Dragón (noroeste).");
+  if (boss){ ents.splice(ents.findIndex(e=>e.t==="B"),1); B = null; sfx.win(); say([`¡El ${m.name} cae derrotado!`, "La luz regresa al reino. ¡Eres un maestro de la Ley de los Cosenos!"], "", endGame); state="dialog"; return; }
+  endBattle(); say(lines, "");
+}
+function lose(){
+  endBattle(); P.hp = maxHp(); P.x = P.tx = P.sx; P.y = P.ty = P.sy; P.dir = "down";
+  say(["Te desmayaste...", "El Sabio Coseno te llevó de regreso a la aldea y te curó.", "Repasa la fórmula con el botón 📜 y vuelve a intentarlo."], "");
+}
+let shakeT = 0;
+function shakeScreen(){ shakeT = 14; }
+
+// ======================= FIN DEL JUEGO =======================
+function endGame(){
+  state = "end";
+  const tot = ST.correct + ST.wrong, pct = tot ? Math.round(100*ST.correct/tot) : 0;
+  const mins = Math.max(1, Math.round((Date.now()-ST.t0)/60000));
+  const fecha = new Date().toLocaleString("es-MX", {dateStyle:"long", timeStyle:"short"});
+  const ov = $("overlay"); ov.hidden = false;
+  ov.innerHTML = `<div class="cert"><h2>🏆 CERTIFICADO 🏆</h2>
+    <p><b>${escapeHtml(P.name)}</b> derrotó al Dragón Trigonométrico y domina la Ley de los Cosenos.</p>
+    <table><tr><td>Respuestas correctas</td><td>${ST.correct} / ${tot}</td></tr>
+    <tr><td>Precisión</td><td>${pct}%</td></tr><tr><td>Pistas usadas</td><td>${ST.hints}</td></tr>
+    <tr><td>Nivel final</td><td>${P.lvl}</td></tr><tr><td>Tiempo</td><td>${mins} min</td></tr></table>
+    <p style="font-size:13px">${fecha}</p>
+    <p style="font-size:13px"><b>Toma una captura de pantalla</b> y envíala a tu profesor.</p></div>
+    <button class="main" onclick="location.reload()">↻ JUGAR OTRA VEZ</button>`;
+  ui.innerHTML = `<div class="info">¡Felicidades! 🎉</div>`;
+}
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+// ======================= ENTRADA =======================
+const KEYMAP = {ArrowUp:"up", ArrowDown:"down", ArrowLeft:"left", ArrowRight:"right", w:"up", s:"down", a:"left", d:"right", W:"up", S:"down", A:"left", D:"right"};
+addEventListener("keydown", e => {
+  const tag = e.target.tagName;
+  if (tag === "INPUT" || tag === "BUTTON" && (e.key === "Enter" || e.key === " ")) return;
+  if (state === "battle"){ if ((e.key==="Enter"||e.key===" ") && B && B.phase==="result"){ e.preventDefault(); next(); } return; }
+  if (state === "dialog"){ if (["Enter"," ","z","Z"].includes(e.key) || KEYMAP[e.key]){ e.preventDefault(); if (!e.repeat && !KEYMAP[e.key]) advance(); } return; }
+  if (state === "map"){
+    const d = KEYMAP[e.key];
+    if (d){ e.preventDefault(); if (!e.repeat && !held.includes(d)){ held.push(d); if (!P.moving) tap = d; } }
+    else if (e.key==="Enter" || e.key===" "){ e.preventDefault(); if (!e.repeat) actionFace(); }
+  }
+});
+addEventListener("keyup", e => { const d = KEYMAP[e.key]; if (d) held = held.filter(h => h !== d); });
+addEventListener("blur", () => held = []);
+document.querySelectorAll(".dpad button").forEach(btn => {
+  const d = btn.dataset.d;
+  btn.addEventListener("pointerdown", e => { e.preventDefault(); if (state==="map" && !held.includes(d)){ held.push(d); if (!P.moving) tap = d; } });
+  ["pointerup","pointerleave","pointercancel"].forEach(ev => btn.addEventListener(ev, () => held = held.filter(h => h !== d)));
+});
+$("aBtn").addEventListener("pointerdown", e => { e.preventDefault(); if (state==="dialog") advance(); else if (state==="map") actionFace(); });
+function setTouch(v){ TOUCH = v; $("pad").classList.toggle("on", v); if (v && state === "battle" && B && B.phase === "ask") renderBattle(); }
+setTouch(detectTouch());
+addEventListener("pointerdown", e => { if (e.pointerType === "touch" && !TOUCH) setTouch(true); }, true);
+
+$("startBtn").onclick = () => {
+  const n = $("nameIn").value.trim();
+  if (!n){ const i = $("nameIn"); i.classList.remove("shake"); void i.offsetWidth; i.classList.add("shake"); i.focus(); return; }
+  if (!TOUCH && detectTouch()) setTouch(true);
+  P.name = n; ST.t0 = Date.now(); $("overlay").hidden = true; state = "map";
+  beep(1,.01); // desbloquea audio
+  say(TXT.intro, "Narrador");
+};
+$("nameIn").addEventListener("keydown", e => { if (e.key === "Enter") $("startBtn").click(); });
+
+// ======================= BUCLE =======================
+function loop(){
+  T++;
+  if (state === "map") updateMap();
+  document.body.classList.toggle("battle", state === "battle");
+  $("pad").style.visibility = state === "end" ? "hidden" : "visible";
+  ctx.save();
+  if (shakeT > 0){ ctx.translate((Math.random()-.5)*10, (Math.random()-.5)*10); shakeT--; }
+  if (state === "battle" && B) drawBattle(); else drawMap();
+  ctx.restore();
+  if (state !== "title") drawHUD();
+  requestAnimationFrame(loop);
+}
+ui.innerHTML = `<div class="info">Escribe tu nombre y presiona <b>COMENZAR</b>.</div>`;
+loop();
+</script>
+</body>
+</html>
