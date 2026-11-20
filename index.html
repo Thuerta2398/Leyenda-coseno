@@ -29,7 +29,7 @@ button.main{background:#c0392b;font-family:"Press Start 2P",monospace;font-size:
 button.main:hover{background:#e04a3a}
 #ui{margin-top:8px;background:var(--panel);border:4px solid var(--border);border-radius:6px;padding:12px 14px;min-height:118px;font-size:16px;line-height:1.45;}
 .dlg{cursor:pointer;position:relative;padding-right:20px}
-.dlg b{color:var(--accent);font-family:"Press Start 2P",monospace;font-size:11px;display:block;margin-bottom:6px}
+.dlg > b{color:var(--accent);font-family:"Press Start 2P",monospace;font-size:11px;display:block;margin-bottom:6px}
 .dlg .nx{position:absolute;right:0;bottom:0;animation:blink 1s infinite;color:var(--accent)}
 @keyframes blink{50%{opacity:0}}
 .formula{display:inline-block;background:#fff6d6;color:#3a2a10;padding:2px 8px;border-radius:4px;font-weight:600;font-family:"Cambria Math","Times New Roman",serif;font-size:1.08em}
@@ -72,6 +72,27 @@ button,#pad,canvas{touch-action:manipulation;-webkit-touch-callout:none;-webkit-
 .kp button.use{background:#2f7a45;font-size:13px}
 input.tgt{outline:3px solid var(--accent);outline-offset:1px}
 body.battle #pad{display:none}
+/* Fórmulas estandarizadas: fracciones apiladas */
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .12em;line-height:1.25}
+.fr>span{padding:0 .25em;white-space:nowrap}
+.fr>span:first-child{border-bottom:2px solid currentColor}
+.pp{font-size:1.6em;vertical-align:middle;font-weight:400;line-height:1}
+.formula.blk{display:block;width:fit-content;max-width:100%;margin:6px 0}
+.datos{font-size:15px;color:#cfe3ff;margin:0 0 6px}
+.datos b{color:#ff8a95}
+.sol small{display:block;font-family:monospace;font-size:13px;color:var(--muted);margin-top:6px;word-break:break-all}
+code{background:#2a2750;padding:1px 4px;border-radius:3px;word-break:break-all}
+/* Misiones */
+.quests{margin-top:8px}
+.quests summary{cursor:pointer;font-size:15px}
+.quests summary b{color:var(--accent)}
+.qbar{height:8px;background:#444;border-radius:4px;overflow:hidden;margin:6px 0 2px}
+.qbar i{display:block;height:100%;background:var(--good)}
+.quests ul{list-style:none;padding:0;margin:6px 0 0;font-size:14px;line-height:1.6}
+.quests li.done{color:var(--muted);text-decoration:line-through}
+.quests li.cur{color:var(--accent);font-weight:600}
+#bReset{background:#5a2f3a}
+#contBox{display:flex;flex-direction:column;align-items:center;gap:10px}
 /* Horizontal en celular/tablet: juego a la izquierda, panel y controles a la derecha */
 @media (orientation:landscape) and (pointer:coarse){
   body{padding:6px;min-height:0;height:100vh;height:100dvh;overflow:hidden;align-items:center}
@@ -156,21 +177,35 @@ const SRC = [
 "########################################",
 ];
 
+// ======================= NOTACIÓN ESTANDARIZADA =======================
+// Convención única en todo el juego: minúscula = lado, MAYÚSCULA = ángulo,
+// el lado a está enfrente del ángulo A (b–B, c–C). Multiplicación con "·",
+// ángulos con cos( ), y el ángulo siempre despejado con cos⁻¹ y fracción apilada.
+const frac = (n,d) => `<span class="fr"><span>${n}</span><span>${d}</span></span>`;
+const fm = (s, blk) => `<span class="formula${blk ? " blk" : ""}">${s}</span>`;
+const PAR = s => `<span class="pp">(</span>${s}<span class="pp">)</span>`;
+// Lado x opuesto al ángulo X; y, z son los otros dos lados.
+const LADO = (x,y,z,X) => `${x}² = ${y}² + ${z}² − 2·${y}·${z}·cos(${X})`;
+const COSANG = (X,x,y,z) => `cos(${X}) = ${frac(`${y}² + ${z}² − ${x}²`, `2·${y}·${z}`)}`;
+const ANG = (X,x,y,z) => `${X} = cos⁻¹${PAR(frac(`${y}² + ${z}² − ${x}²`, `2·${y}·${z}`))}`;
+const TRIOS = [["a","b","c","A"], ["b","a","c","B"], ["c","a","b","C"]];
+
 // ======================= TEXTOS =======================
 const TXT = {
   intro: ["El Dragón Trigonométrico ha robado la luz del reino.",
           "Dicen que solo quien domine la LEY DE LOS COSENOS podrá vencerlo.",
-          "Busca al Sabio Coseno en la aldea: el anciano de túnica morada."],
+          "Busca al Sabio Coseno en la aldea: el anciano de túnica morada.",
+          "Tu progreso se guarda solo en este navegador. Abajo verás tus misiones."],
   S: ["¡Bienvenido, aprendiz! Soy el Sabio Coseno.",
-      "Si conoces DOS LADOS y el ÁNGULO ENTRE ELLOS, puedes encontrar el tercer lado:",
-      "<span class='formula'>c² = a² + b² − 2ab·cos(C)</span>",
-      "Ojo: el ángulo C es el que queda ENFRENTE del lado c que buscas.",
+      "Primero, la regla de los nombres: minúscula = LADO, MAYÚSCULA = ÁNGULO. El lado a está ENFRENTE del ángulo A, b enfrente de B y c enfrente de C.",
+      "Si conoces DOS LADOS y el ÁNGULO ENTRE ELLOS, encuentras el tercer lado:<br>" + fm(LADO("c","a","b","C")),
+      "El ángulo que usas (C) es el que queda ENFRENTE del lado que buscas (c).",
       "En la hierba alta (al este) habitan monstruos. ¡Cada respuesta correcta es un golpe!",
-      "Al llegar a nivel 3, el guardia del puente te dejará pasar al Bosque Sombrío."],
-  N: ["¿Conoces los TRES LADOS y buscas un ángulo? Despeja el coseno:",
-      "<span class='formula'>cos(C) = (a² + b² − c²) / (2ab)</span>",
-      "Después usa cos⁻¹ (en la calculadora: SHIFT + cos) para obtener el ángulo.",
-      "¡Y revisa que tu calculadora esté en modo GRADOS (DEG), no en radianes!",
+      `Al llegar a nivel ${NIVEL_BOSQUE}, el guardia del puente te dejará pasar al Bosque Sombrío.`],
+  N: ["¿Conoces los TRES LADOS y buscas un ÁNGULO? Primero despeja el coseno:<br>" + fm(COSANG("C","c","a","b")),
+      "Luego aplica coseno inverso (cos⁻¹) para obtener el ángulo:<br>" + fm(ANG("C","c","a","b")),
+      "Truco: el lado que se RESTA arriba es el que está ENFRENTE del ángulo que buscas (c para C). Abajo van los otros dos lados.",
+      "En la calculadora: modo GRADOS (DEG) y SHIFT + cos para cos⁻¹. Pon paréntesis a TODO el numerador y a TODO el denominador:<br><code>acos((a^2+b^2-c^2)/(2*a*b))</code>",
       "Redondea tus respuestas a 1 decimal. Se acepta un pequeño margen de error."],
   Kno: ["¡Alto! Más allá del río está el Bosque Sombrío.",
         `Solo dejo pasar a guerreros de nivel ${NIVEL_BOSQUE} o más. Entrena en la hierba alta.`],
@@ -182,9 +217,11 @@ const TXT = {
          "Lee con calma, dibuja el triángulo y que la Ley de los Cosenos te acompañe."],
   B: ["¡JA, JA, JA! ¿Un aprendiz se atreve a entrar a mi castillo?",
       "Mis acertijos son PROBLEMAS REALES. Cinco golpes necesitarás... ¡si puedes!"],
-  formulas: ["<b>Para encontrar un LADO</b> (conoces 2 lados y el ángulo entre ellos):<br><span class='formula'>c² = a² + b² − 2ab·cos(C)</span>",
-             "<b>Para encontrar un ÁNGULO</b> (conoces los 3 lados):<br><span class='formula'>cos(C) = (a² + b² − c²) / (2ab)</span> y luego C = cos⁻¹(…)",
-             "El lado <b>a</b> está enfrente del ángulo <b>A</b>, el lado <b>b</b> enfrente de <b>B</b> y el lado <b>c</b> enfrente de <b>C</b>."],
+  formulas: ["<b>Convención</b>: minúscula = lado, MAYÚSCULA = ángulo. El lado <b>a</b> está enfrente del ángulo <b>A</b>, el lado <b>b</b> enfrente de <b>B</b> y el lado <b>c</b> enfrente de <b>C</b>.",
+             "<b>Para encontrar un LADO</b> (conoces 2 lados y el ángulo entre ellos):" + TRIOS.map(([x,y,z,X]) => fm(LADO(x,y,z,X), 1)).join(""),
+             "<b>Para encontrar un ÁNGULO</b> (conoces los 3 lados):" + TRIOS.map(([x,y,z,X]) => fm(ANG(X,x,y,z), 1)).join(""),
+             "<b>Truco</b>: el lado que está enfrente del ángulo va solo a la izquierda (fórmula del lado) o se RESTA en el numerador (fórmula del ángulo).",
+             "<b>En la calculadora</b> (modo DEG): " + fm(ANG("C","c","a","b")) + "<br>se escribe <code>acos((a^2+b^2-c^2)/(2*a*b))</code>"],
 };
 
 const MONS = {
@@ -230,9 +267,10 @@ function genSide(lo, hi, angList){
     kind:"side", X,Y,Z,x,y,z,vx,vy,vz,g,s, an:angs(s), answer:vx, tol:Math.max(0.15, vx*0.01), unit:"",
     lab:{sides:{[x]:"?",[y]:vy,[z]:vz}, angles:{[X]:g+"°"}},
     text:`Conoces dos lados y el ángulo entre ellos. Encuentra el lado <b>${x}</b> (redondea a 1 decimal).`,
-    hints:[`<span class='formula'>${x}² = ${y}² + ${z}² − 2·${y}·${z}·cos(${X})</span>`,
-           `<span class='formula'>${x}² = ${vy}² + ${vz}² − 2(${vy})(${vz})·cos(${g}°)</span>`],
-    sol:`${x}² = ${vy*vy} + ${vz*vz} − ${2*vy*vz}·cos(${g}°) = ${f2(x2)} &nbsp;⇒&nbsp; ${x} = √${f2(x2)} ≈ <b>${f1(vx)}</b>`,
+    hints:[fm(LADO(x,y,z,X)),
+           fm(`${x}² = ${vy}² + ${vz}² − 2·${vy}·${vz}·cos(${g}°)`)],
+    sol:`${x}² = ${vy}² + ${vz}² − 2·${vy}·${vz}·cos(${g}°)<br>${x}² = ${vy*vy} + ${vz*vz} − ${2*vy*vz}·cos(${g}°) = ${f2(x2)}<br>${x} = √${f2(x2)} ≈ <b>${f1(vx)}</b>` +
+        `<small>En la calculadora: sqrt(${vy}^2+${vz}^2-2*${vy}*${vz}*cos(${g}))</small>`,
     ansTxt:`${x} ≈ ${f1(vx)}`,
   };
 }
@@ -250,10 +288,11 @@ function genAngle(lo, hi){
     kind:"angle", X,Y,Z,x,y,z,vx,vy,vz,s,an, answer:ang, tol:0.6, unit:"°",
     lab:{sides:{a:s.a,b:s.b,c:s.c}, angles:{[X]:"?"}},
     text:`Conoces los tres lados. Encuentra el ángulo <b>${X}</b> en grados (redondea a 1 decimal).`,
-    hints:[`<span class='formula'>cos(${X}) = (${y}² + ${z}² − ${x}²) / (2·${y}·${z})</span>`,
-           `<span class='formula'>cos(${X}) = (${vy}² + ${vz}² − ${vx}²) / (2·${vy}·${vz})</span>`],
-    sol:`cos(${X}) = (${vy*vy} + ${vz*vz} − ${vx*vx}) / ${den} = ${num}/${den} ≈ ${cv.toFixed(4)} &nbsp;⇒&nbsp; ${X} = cos⁻¹(${cv.toFixed(4)}) ≈ <b>${f1(ang)}°</b>`,
-    ansTxt:`${X} ≈ ${f1(ang)}°`,
+    hints:[fm(ANG(X,x,y,z)),
+           fm(`${X} = cos⁻¹${PAR(frac(`${vy}² + ${vz}² − ${vx}²`, `2·${vy}·${vz}`))}`)],
+    sol:`cos(${X}) = ${frac(`${vy}² + ${vz}² − ${vx}²`, `2·${vy}·${vz}`)} = ${frac(`${vy*vy} + ${vz*vz} − ${vx*vx}`, den)} = ${frac(num, den)} ≈ ${cv.toFixed(4)}<br>${X} = cos⁻¹(${cv.toFixed(4)}) ≈ <b>${f1(ang)}°</b>` +
+        `<small>En la calculadora: acos((${vy}^2+${vz}^2-${vx}^2)/(2*${vy}*${vz}))</small>`,
+    ansTxt:`${X} ≈ ${f1(ang)}`,
   };
 }
 function genProblem(zone){
@@ -272,8 +311,8 @@ function genProblem(zone){
   }
   const p = genAngle(10, 50), {X, s} = p;
   p.text = pick([
-    `Tres torres del castillo, A, B y C, forman un triángulo: AB = ${s.c} m, BC = ${s.a} m y CA = ${s.b} m. ¿Qué ángulo se forma en la torre ${X}? <i>(grados, 1 decimal)</i>`,
-    `Un mapa del tesoro marca tres puntos: AB = ${s.c} pasos, BC = ${s.a} pasos y CA = ${s.b} pasos. ¿Cuánto mide el ángulo en el punto ${X}? <i>(grados, 1 decimal)</i>`,
+    `Tres torres del castillo, A, B y C, forman un triángulo: AB = c = ${s.c} m, BC = a = ${s.a} m y CA = b = ${s.b} m. ¿Qué ángulo se forma en la torre ${X}? <i>(grados, 1 decimal)</i>`,
+    `Un mapa del tesoro marca tres puntos: AB = c = ${s.c} pasos, BC = a = ${s.a} pasos y CA = b = ${s.b} pasos. ¿Cuánto mide el ángulo en el punto ${X}? <i>(grados, 1 decimal)</i>`,
   ]);
   return p;
 }
@@ -283,7 +322,7 @@ const map = SRC.map(r => r.split(""));
 const MH = map.length, MW = map[0].length;
 const ents = [];
 const P = {x:0,y:0,tx:0,ty:0,prog:0,moving:false,dir:"down",lvl:1,xp:0,hp:20,potions:1,steps:0,sx:0,sy:0,name:""};
-const ST = {correct:0, wrong:0, hints:0, wins:0, t0:0};
+const ST = {correct:0, wrong:0, hints:0, wins:0, t0:0, ms:0, fin:0};
 for (let y=0; y<MH; y++) for (let x=0; x<MW; x++){
   const c = map[y][x];
   if (c === "P"){ P.x=P.sx=x; P.y=P.sy=y; map[y][x]="."; }
@@ -292,6 +331,68 @@ for (let y=0; y<MH; y++) for (let x=0; x<MW; x++){
     map[y][x] = c==="K" ? "_" : c==="B" ? "F" : (map[y][x-1]===";" || map[y][x-1]==='"') ? map[y][x-1] : ".";
   }
 }
+const ENT_ALL = ents.slice();               // todas las entidades originales (para guardar/restaurar)
+const ENT = {}; for (const e of ENT_ALL) if (!ENT[e.t]) ENT[e.t] = e;
+const CHESTS = ENT_ALL.filter(e => e.t === "C");
+const alive = e => ents.includes(e);
+
+// ======================= MISIONES =======================
+// Las principales (sin opt) se cumplen en orden; la primera pendiente es el objetivo actual.
+const QUESTS = [
+  {t:"Habla con el Sabio Coseno", obj:"Busca al Sabio Coseno en la aldea (túnica morada).",
+   done:() => ENT.S.talked, tgt:() => ENT.S},
+  {t:"Habla con la Aldeana Ana", obj:"Habla con la Aldeana Ana: te enseñará a encontrar ángulos.",
+   done:() => ENT.N.talked, tgt:() => ENT.N},
+  {t:`Llega a nivel ${NIVEL_BOSQUE} en la hierba alta`, obj:`Entrena en la hierba alta (este de la aldea) hasta nivel ${NIVEL_BOSQUE}.`,
+   done:() => P.lvl >= NIVEL_BOSQUE, tgt:() => ({x:31, y:19}), zone:'"'},
+  {t:"Cruza el puente del río", obj:"Habla con el guardia del puente del río (norte).",
+   done:() => !alive(ENT.K), tgt:() => ENT.K},
+  {t:`Llega a nivel ${NIVEL_CASTILLO} en el Bosque Sombrío`, obj:`Entrena en el Bosque Sombrío hasta nivel ${NIVEL_CASTILLO}.`,
+   done:() => P.lvl >= NIVEL_CASTILLO, tgt:() => ({x:27, y:5}), zone:";"},
+  {t:"Pasa con el guardia del castillo", obj:"Habla con el guardia del castillo (noroeste).",
+   done:() => !alive(ENT.L), tgt:() => ENT.L},
+  {t:"Derrota al Dragón Trigonométrico", obj:"Entra al castillo del lago y derrota al Dragón.",
+   done:() => !alive(ENT.B), tgt:() => ENT.B},
+  {t:`Abre los ${CHESTS.length} cofres (opcional)`, opt:true,
+   done:() => CHESTS.every(c => c.open), prog:() => `${CHESTS.filter(c=>c.open).length}/${CHESTS.length}`,
+   tgt:() => CHESTS.find(c => !c.open)},
+];
+const curQuest = () => QUESTS.find(q => !q.opt && !q.done());
+const questsDone = () => QUESTS.filter(q => q.done()).length;
+
+// ======================= GUARDADO (localStorage) =======================
+const SAVE_KEY = "leyendaCoseno.v1";
+function save(){
+  if (state === "title" || !P.name) return;
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      v:1, done: state === "end", muted,
+      P:{x:P.x, y:P.y, dir:P.dir, lvl:P.lvl, xp:P.xp, hp:P.hp, potions:P.potions, name:P.name},
+      ST, ents: ENT_ALL.map(e => ({gone:!alive(e), open:e.open, talked:e.talked})),
+    }));
+  } catch(e){}
+}
+function readSave(){
+  try {
+    const d = JSON.parse(localStorage.getItem(SAVE_KEY));
+    return d && d.v === 1 && d.P && d.P.name && Array.isArray(d.ents) && d.ents.length === ENT_ALL.length ? d : null;
+  } catch(e){ return null; }
+}
+function applySave(d){
+  Object.assign(P, d.P); Object.assign(ST, d.ST);
+  P.tx = P.x; P.ty = P.y; P.prog = 0; P.moving = false;
+  if (solidTile(P.x, P.y) || entAt(P.x, P.y)){ P.x = P.tx = P.sx; P.y = P.ty = P.sy; }
+  if (!(P.hp > 0)) P.hp = maxHp(); P.hp = Math.min(P.hp, maxHp());
+  ents.length = 0;
+  ENT_ALL.forEach((e,i) => { const s = d.ents[i]; e.open = !!s.open; e.talked = !!s.talked; if (!s.gone) ents.push(e); });
+  muted = !!d.muted; $("mute").textContent = muted ? "🔇" : "🔊";
+}
+function resetGame(){
+  try { localStorage.removeItem(SAVE_KEY); } catch(e){}
+  location.reload();
+}
+addEventListener("visibilitychange", () => { if (document.hidden) save(); });
+addEventListener("pagehide", save);
 const SOLID = new Set(["#","~","X","H"]);
 const maxHp = () => 20 + (P.lvl-1)*6;
 const xpNext = () => 20 + (P.lvl-1)*15;
@@ -441,6 +542,28 @@ function drawMap(){
   const list = ents.map(e=>({y:e.y, f:()=>drawEnt(e, Math.round(e.x*TILE-camX), Math.round(e.y*TILE-camY))}));
   list.push({y:py/TILE, f:()=>drawHero(Math.round(px-camX), Math.round(py-camY))});
   list.sort((a,b)=>a.y-b.y).forEach(o=>o.f());
+  // Indicador de la misión actual: flecha sobre el objetivo o en el borde si está fuera de pantalla
+  const q = curQuest(), t = q && q.tgt();
+  if (t && !(q.zone && map[P.y][P.x] === q.zone)){
+    const k = hudScale(), tx = t.x*TILE - camX + 16, ty = t.y*TILE - camY + 16;
+    if (tx < 0 || tx > 640 || ty < 0 || ty > 480) edgePointer(tx, ty, 8 + 72*k + 10, k);
+    else if (q.zone) arrowDown(tx, ty - 6 + Math.sin(T/8)*3, k);
+  }
+}
+function arrowDown(x,y,k){
+  const w = 9*k, h = 12*k;
+  ctx.fillStyle = "#ffd447"; ctx.strokeStyle = "#000"; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x-w, y-h); ctx.lineTo(x+w, y-h); ctx.lineTo(x, y); ctx.closePath(); ctx.fill(); ctx.stroke();
+}
+function edgePointer(tx,ty,top,k){
+  const cx = 320, cy = 240, dx = tx-cx, dy = ty-cy, m = 22*k;
+  const t = Math.min(dx > 0 ? (640-m-cx)/dx : dx < 0 ? (m-cx)/dx : Infinity,
+                     dy > 0 ? (480-m-cy)/dy : dy < 0 ? (Math.min(cy-10, top+m)-cy)/dy : Infinity);
+  const x = cx + dx*t, y = cy + dy*t, s = (14 + Math.sin(T/6)*2)*k;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(Math.atan2(dy, dx));
+  ctx.fillStyle = "#ffd447"; ctx.strokeStyle = "#000"; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(s, 0); ctx.lineTo(-s*0.7, -s*0.75); ctx.lineTo(-s*0.3, 0); ctx.lineTo(-s*0.7, s*0.75); ctx.closePath(); ctx.stroke(); ctx.fill();
+  ctx.restore();
 }
 function drawEnt(e,sx,sy){
   const bob = Math.sin(T/15 + e.x)*1;
@@ -449,16 +572,21 @@ function drawEnt(e,sx,sy){
   if (e.t==="K"||e.t==="L") drawPerson(sx,sy,{robe:"#7d8590", helmet:true, spear:true});
   if (e.t==="C") drawChest(sx,sy,e.open);
   if (e.t==="B") drawDragon(sx+16, sy+14 + Math.sin(T/12)*2, 0.22);
-  if ((e.t==="S"||e.t==="N") && !e.talked){
-    ctx.font = "12px 'Press Start 2P'"; ctx.fillStyle = "#ffd447"; ctx.textAlign="center";
-    ctx.fillText("!", sx+16, sy-6 + Math.sin(T/8)*2);
+  // Marcadores de misión: flecha = objetivo actual, "!" = misión pendiente aquí
+  const k = hudScale(), q = curQuest(), by = Math.sin(T/8)*3;
+  if (q && q.tgt() === e) arrowDown(sx+16, sy - (e.t==="B" ? 14 : 6) + by, k);
+  else if (((e.t==="S"||e.t==="N") && !e.talked) || (e.t==="C" && !e.open)){
+    ctx.font = `${Math.round(12*k)}px 'Press Start 2P'`; ctx.textAlign="center"; ctx.textBaseline="alphabetic";
+    ctx.lineWidth = 3; ctx.strokeStyle = "#000"; ctx.strokeText("!", sx+16, sy-4+by);
+    ctx.fillStyle = "#ffd447"; ctx.fillText("!", sx+16, sy-4+by);
   }
 }
 
 // ======================= DIBUJO: MONSTRUOS =======================
 function eyes(x1,x2,y,r,pupil="#111"){ ell(x1,y,r,r,"#fff"); ell(x2,y,r,r,"#fff"); ell(x1+1,y+1,r*0.5,r*0.5,pupil); ell(x2+1,y+1,r*0.5,r*0.5,pupil); }
-function drawMonster(m,cx,cy,t){
-  ctx.save(); ctx.translate(cx,cy);
+function drawMonster(m,cx,cy,t,s=1){
+  if (m.kind==="dragon"){ drawDragon(cx, cy + Math.sin(t/12)*5*s, 1.05*s, t); return; }
+  ctx.save(); ctx.translate(cx,cy); ctx.scale(s,s);
   if (m.kind==="slime"){
     const sq = Math.sin(t/8)*4;
     ell(0, 60, 60, 10, "rgba(0,0,0,.25)");
@@ -494,8 +622,6 @@ function drawMonster(m,cx,cy,t){
     R(-18, -55+b, 12, 8, "#ffcc00"); R(6, -55+b, 12, 8, "#ffcc00");
     ctx.strokeStyle = "#ffcc00"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-20,40+b); ctx.lineTo(20,40+b); ctx.lineTo(-20,0+b); ctx.closePath(); ctx.stroke();
     ctx.beginPath(); ctx.arc(-20, 40+b, 10, -Math.PI/2, 0); ctx.stroke();
-  } else if (m.kind==="dragon"){
-    ctx.restore(); drawDragon(cx, cy + Math.sin(t/12)*5, 1.05, t); return;
   }
   ctx.restore();
 }
@@ -526,92 +652,147 @@ function drawDragon(cx,cy,s,t=T){
 }
 
 // ======================= DIBUJO: TRIÁNGULO =======================
-function pill(text,x,y,color,bg){
-  ctx.font = "bold 17px system-ui, sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
-  const w = ctx.measureText(text).width + 10;
-  ctx.fillStyle = bg; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x-w/2, y-12, w, 24, 5) : ctx.rect(x-w/2, y-12, w, 24); ctx.fill();
-  ctx.fillStyle = color; ctx.fillText(text, x, y+1);
-}
-function drawTri(p,bx,by,bw,bh){
+// Escala de letra según el ancho real del lienzo en pantalla (en teléfono el
+// lienzo de 640 px se ve a ~360 px y el texto quedaba diminuto).
+const cssScale = () => (cv.clientWidth || 640) / 640;
+const hudScale = () => Math.min(1.6, Math.max(1, 0.75 / cssScale()));
+const triScale = () => Math.min(1.8, Math.max(1, 13 / (17 * cssScale())));
+function rrect(x,y,w,h,r){ ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x,y,w,h,r) : ctx.rect(x,y,w,h); }
+function drawTri(p,bx,by,bw,bh,k=1){
   ctx.fillStyle = "#f4e6c3"; ctx.strokeStyle = "#8a6a3a"; ctx.lineWidth = 4;
-  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(bx,by,bw,bh,10) : ctx.rect(bx,by,bw,bh); ctx.fill(); ctx.stroke();
-  ctx.font = "9px 'Press Start 2P'"; ctx.fillStyle = "#8a6a3a"; ctx.textAlign="left"; ctx.textBaseline="alphabetic";
-  ctx.fillText("Diagrama (no a escala exacta)", bx+10, by+bh-10);
+  rrect(bx,by,bw,bh,10); ctx.fill(); ctx.stroke();
+  const fs = Math.round(9*k), foot = fs + 14;
+  ctx.font = `${fs}px 'Press Start 2P'`; ctx.fillStyle = "#8a6a3a"; ctx.textAlign="left"; ctx.textBaseline="alphabetic";
+  ctx.fillText("Diagrama aproximado", bx+10, by+bh-10);
   const {a,b,c} = p.s, A = p.an.A*Math.PI/180;
   const raw = {A:[0,0], B:[c,0], C:[b*Math.cos(A), -b*Math.sin(A)]};
   const xs = Object.values(raw).map(v=>v[0]), ys = Object.values(raw).map(v=>v[1]);
   const minx=Math.min(...xs), maxx=Math.max(...xs), miny=Math.min(...ys), maxy=Math.max(...ys);
-  const pad = 48, sc = Math.min((bw-2*pad)/(maxx-minx), (bh-2*pad-14)/Math.max(maxy-miny, 0.001));
-  const ox = bx + bw/2 - (minx+maxx)/2*sc, oy = by + (bh-14)/2 - (miny+maxy)/2*sc;
-  const V = {}; for (const k of LET) V[k] = [ox + raw[k][0]*sc, oy + raw[k][1]*sc];
+  const pad = 30 + 26*k, sc = Math.min((bw-2*pad)/(maxx-minx), (bh-2*pad-foot)/Math.max(maxy-miny, 0.001));
+  const ox = bx + bw/2 - (minx+maxx)/2*sc, oy = by + (bh-foot)/2 - (miny+maxy)/2*sc;
+  const V = {}; for (const K of LET) V[K] = [ox + raw[K][0]*sc, oy + raw[K][1]*sc];
   const G = [(V.A[0]+V.B[0]+V.C[0])/3, (V.A[1]+V.B[1]+V.C[1])/3];
   ctx.fillStyle = "rgba(91,155,230,.18)"; ctx.beginPath(); ctx.moveTo(...V.A); ctx.lineTo(...V.B); ctx.lineTo(...V.C); ctx.closePath(); ctx.fill();
-  // ángulos
-  for (const k of LET){
-    const lbl = p.lab.angles[k]; if (!lbl) continue;
-    const [o1,o2] = LET.filter(j=>j!==k), v = V[k];
+  // arcos de los ángulos conocidos / buscados
+  for (const K of LET){
+    const lbl = p.lab.angles[K]; if (!lbl) continue;
+    const [o1,o2] = LET.filter(j=>j!==K), v = V[K];
     const a1 = Math.atan2(V[o1][1]-v[1], V[o1][0]-v[0]), a2 = Math.atan2(V[o2][1]-v[1], V[o2][0]-v[0]);
     let d = a2 - a1; while (d > Math.PI) d -= 2*Math.PI; while (d < -Math.PI) d += 2*Math.PI;
     const len = Math.min(Math.hypot(V[o1][0]-v[0], V[o1][1]-v[1]), Math.hypot(V[o2][0]-v[0], V[o2][1]-v[1]));
-    const r = Math.min(26, len*0.3), ask = lbl === "?";
-    ctx.strokeStyle = ask ? "#d62839" : "#2a7a3a"; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(v[0], v[1], r, a1, a1+d, d<0); ctx.stroke();
-    const mid = a1 + d/2;
-    pill(ask ? `${k} = ?` : lbl, v[0] + Math.cos(mid)*(r+30), v[1] + Math.sin(mid)*(r+22),ask ? "#fff" : "#1d5a2a", ask ? "#d62839" : "rgba(255,255,255,.85)");
+    ctx.strokeStyle = lbl === "?" ? "#d62839" : "#2a7a3a"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(v[0], v[1], Math.min(24*k, len*0.28), a1, a1+d, d<0); ctx.stroke();
   }
   ctx.strokeStyle = "#3a2a1a"; ctx.lineWidth = 3; ctx.lineJoin = "round";
   ctx.beginPath(); ctx.moveTo(...V.A); ctx.lineTo(...V.B); ctx.lineTo(...V.C); ctx.closePath(); ctx.stroke();
-  // vértices
-  for (const k of LET){
-    const v = V[k], dx = v[0]-G[0], dy = v[1]-G[1], n = Math.hypot(dx,dy) || 1;
-    ctx.font = "bold 18px serif"; ctx.fillStyle = "#3a2a1a"; ctx.textAlign="center"; ctx.textBaseline="middle";
-    ctx.fillText(k, v[0] + dx/n*16, v[1] + dy/n*16);
+
+  // Etiquetas: el vértice y su ángulo van JUNTOS ("C = 40°") hacia afuera del
+  // triángulo; los lados ("a = 7") hacia afuera de su punto medio. Después se
+  // separan las que se encimen.
+  const F = Math.round(17*k), H = F + 8;
+  ctx.font = `bold ${F}px system-ui, sans-serif`;
+  const labs = [];
+  const add = (text, ax, ay, dx, dy, kind) => {
+    const w = ctx.measureText(text).width + 12, ext = Math.abs(dx)*w/2 + Math.abs(dy)*H/2, d0 = 5*k + ext;
+    labs.push({text, ax, ay, dx, dy, w, h:H, d0, x:ax+dx*d0, y:ay+dy*d0, kind});
+  };
+  for (const K of LET){
+    const v = V[K], dx = v[0]-G[0], dy = v[1]-G[1], n = Math.hypot(dx,dy) || 1, lbl = p.lab.angles[K];
+    add(lbl ? `${K} = ${lbl === "?" ? "?" : lbl}` : K, v[0], v[1], dx/n, dy/n, lbl === "?" ? "ask" : lbl ? "ang" : "vtx");
   }
-  // lados
   const ends = {a:["B","C"], b:["A","C"], c:["A","B"]};
   for (const s of ["a","b","c"]){
     const lbl = p.lab.sides[s]; if (lbl === undefined) continue;
     const [u,w] = ends[s], mx = (V[u][0]+V[w][0])/2, my = (V[u][1]+V[w][1])/2;
     let nx = -(V[w][1]-V[u][1]), ny = V[w][0]-V[u][0]; const nn = Math.hypot(nx,ny) || 1; nx/=nn; ny/=nn;
     if ((mx-G[0])*nx + (my-G[1])*ny < 0){ nx=-nx; ny=-ny; }
-    const ask = lbl === "?";
-    pill(`${s} = ${lbl}`, mx + nx*18, my + ny*18, ask ? "#fff" : "#1b3a6b", ask ? "#d62839" : "rgba(255,255,255,.85)");
+    add(`${s} = ${lbl}`, mx, my, nx, ny, lbl === "?" ? "ask" : "side");
+  }
+  const X0 = bx+6, X1 = bx+bw-6, Y0 = by+6, Y1 = by+bh-foot;
+  for (let it = 0; it < 80; it++){
+    let moved = false;
+    for (let i = 0; i < labs.length; i++) for (let j = i+1; j < labs.length; j++){
+      const L1 = labs[i], L2 = labs[j];
+      const ovx = (L1.w+L2.w)/2 + 4 - Math.abs(L1.x-L2.x), ovy = (L1.h+L2.h)/2 + 3 - Math.abs(L1.y-L2.y);
+      if (ovx <= 0 || ovy <= 0) continue;
+      moved = true;
+      if (ovx < ovy){ const s = (L1.x < L2.x ? -1 : 1) * (ovx/2 + 0.5); L1.x += s; L2.x -= s; }
+      else { const s = (L1.y < L2.y ? -1 : 1) * (ovy/2 + 0.5); L1.y += s; L2.y -= s; }
+    }
+    for (const L of labs){
+      const t = (L.x-L.ax)*L.dx + (L.y-L.ay)*L.dy;               // nunca hacia adentro del triángulo
+      if (t < L.d0){ L.x += L.dx*(L.d0-t); L.y += L.dy*(L.d0-t); }
+      L.x = Math.min(X1 - L.w/2, Math.max(X0 + L.w/2, L.x));
+      L.y = Math.min(Y1 - L.h/2, Math.max(Y0 + L.h/2, L.y));
+    }
+    if (!moved) break;
+  }
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  for (const L of labs){
+    if (Math.hypot(L.x-L.ax, L.y-L.ay) > L.d0 + 14*k){        // línea guía si se tuvo que alejar
+      ctx.strokeStyle = "rgba(58,42,26,.55)"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(L.ax, L.ay); ctx.lineTo(L.x, L.y); ctx.stroke();
+    }
+  }
+  for (const L of labs){
+    const st = {ask:["#d62839","#fff"], ang:["rgba(255,255,255,.92)","#1d5a2a"], side:["rgba(255,255,255,.92)","#1b3a6b"], vtx:[null,"#3a2a1a"]}[L.kind];
+    if (st[0]){ ctx.fillStyle = st[0]; rrect(L.x-L.w/2, L.y-L.h/2, L.w, L.h, 5); ctx.fill(); }
+    ctx.font = L.kind === "vtx" ? `bold ${F+1}px serif` : `bold ${F}px system-ui, sans-serif`;
+    ctx.fillStyle = st[1]; ctx.fillText(L.text, L.x, L.y+1);
   }
   ctx.textBaseline = "alphabetic";
 }
 
 // ======================= DIBUJO: BATALLA Y HUD =======================
+function battleLayout(){
+  const k = triScale();
+  if (cssScale() >= 0.85) return {k, mx:170, my:250, ms:1, box:[16,384,300,76], tri:[330,76,296,330], compact:false};
+  // Teléfono: el diagrama ocupa casi todo el ancho y el monstruo se hace pequeño.
+  const top = Math.round(8 + 72*hudScale() + 6);
+  return {k, mx:98, my:Math.round((top+330)/2)+10, ms:0.6, box:[8,330,182,140], tri:[196,top,438,474-top], compact:true};
+}
 function drawBattle(){
+  const L = B.lay = battleLayout();
   const bg = {1:["#8fd3ff","#5bb04f","#478f3e"], 2:["#1d3b2a","#2d6136","#1f4727"], boss:["#2a1035","#4b2a4f","#3b3346"]}[B.zone];
   const g = ctx.createLinearGradient(0,0,0,480); g.addColorStop(0,bg[0]); g.addColorStop(0.55,bg[0]); g.addColorStop(0.551,bg[1]); g.addColorStop(1,bg[2]);
   ctx.fillStyle = g; ctx.fillRect(0,0,640,480);
   if (B.zone===1){ ell(90,90,40,14,"rgba(255,255,255,.8)"); ell(250,60,50,16,"rgba(255,255,255,.7)"); }
   if (B.zone===2){ for (let i=0;i<7;i++){ R(i*95+10, 120, 14, 150, "#14301c"); ell(i*95+17, 120, 40, 50, "#12391d"); } }
   if (B.zone==="boss"){ for (let i=0;i<5;i++){ R(i*140+20, 80, 40, 190, "#3a2445"); R(i*140+28, 100, 24, 30, "#ffb347"); } }
-  ell(170, 330, 130, 26, "rgba(0,0,0,.18)");
+  ell(L.mx, L.my + 80*L.ms, 130*L.ms, 26*L.ms, "rgba(0,0,0,.18)");
   if (B.hp > 0 || B.flash > 0){
     ctx.save();
     if (B.flash > 0 && Math.floor(B.flash/3)%2===0) ctx.globalAlpha = 0.25;
-    drawMonster(B.m, 170, 250, T);
+    drawMonster(B.m, L.mx, L.my, T, L.ms);
     ctx.restore();
   }
   // caja del monstruo
-  ctx.fillStyle = "rgba(15,14,23,.8)"; ctx.fillRect(16, 384, 300, 76);
-  ctx.strokeStyle = "#fff"; ctx.lineWidth = 3; ctx.strokeRect(16, 384, 300, 76);
-  ctx.font = "11px 'Press Start 2P'"; ctx.fillStyle = "#fff"; ctx.textAlign = "left";
-  ctx.fillText(B.m.name, 28, 410);
-  for (let i=0;i<B.m.hits;i++){ ctx.font = "20px serif"; ctx.fillStyle = i < B.hp ? "#ff5d6c" : "#555"; ctx.fillText("♥", 28 + i*26, 444); }
-  drawTri(B.prob, 330, 76, 296, 330);
+  const [qx,qy,qw,qh] = L.box;
+  ctx.fillStyle = "rgba(15,14,23,.8)"; ctx.fillRect(qx, qy, qw, qh);
+  ctx.strokeStyle = "#fff"; ctx.lineWidth = 3; ctx.strokeRect(qx, qy, qw, qh);
+  ctx.fillStyle = "#fff"; ctx.textAlign = "left";
+  if (L.compact){
+    ctx.font = "bold 21px system-ui, sans-serif";
+    const words = B.m.name.split(" "), l1 = words.slice(0, Math.ceil(words.length/2)).join(" "), l2 = words.slice(Math.ceil(words.length/2)).join(" ");
+    ctx.fillText(l1, qx+10, qy+30); if (l2) ctx.fillText(l2, qx+10, qy+56);
+    for (let i=0;i<B.m.hits;i++){ ctx.font = "30px serif"; ctx.fillStyle = i < B.hp ? "#ff5d6c" : "#555"; ctx.fillText("♥", qx+10 + i*33, qy+110); }
+  } else {
+    ctx.font = "11px 'Press Start 2P'"; ctx.fillText(B.m.name, qx+12, qy+26);
+    for (let i=0;i<B.m.hits;i++){ ctx.font = "20px serif"; ctx.fillStyle = i < B.hp ? "#ff5d6c" : "#555"; ctx.fillText("♥", qx+12 + i*26, qy+60); }
+  }
+  drawTri(B.prob, ...L.tri, L.k);
   // efectos
   B.fx = B.fx.filter(f => f.t > 0);
   for (const f of B.fx){ f.t--; f.y -= 0.8; ctx.globalAlpha = Math.min(1, f.t/20);
-    ctx.font = "16px 'Press Start 2P'"; ctx.textAlign = "center"; ctx.fillStyle = "#000"; ctx.fillText(f.text, f.x+2, f.y+2); ctx.fillStyle = f.c; ctx.fillText(f.text, f.x, f.y); ctx.globalAlpha = 1; }
+    ctx.font = "16px 'Press Start 2P'"; ctx.textAlign = "center"; ctx.fillStyle = "#000"; ctx.fillText(f.text, L.mx+2, f.y+2); ctx.fillStyle = f.c; ctx.fillText(f.text, L.mx, f.y); ctx.globalAlpha = 1; }
   if (B.flash > 0) B.flash--;
   if (B.intro > 0){ ctx.fillStyle = `rgba(255,255,255,${B.intro/25})`; ctx.fillRect(0,0,640,480); B.intro--; }
 }
 function drawHUD(){
-  ctx.fillStyle = "rgba(15,14,23,.78)"; ctx.fillRect(8, 8, 232, 60);
-  ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.strokeRect(8, 8, 232, 60);
+  const k = hudScale();
+  ctx.save(); ctx.scale(k, k);
+  ctx.fillStyle = "rgba(15,14,23,.78)"; ctx.fillRect(8, 8, 232, 72);
+  ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.strokeRect(8, 8, 232, 72);
   ctx.font = "10px 'Press Start 2P'"; ctx.textAlign = "left"; ctx.fillStyle = "#ffd447";
   ctx.fillText(`Nv ${P.lvl}`, 18, 28);
   ctx.fillStyle = "#fff"; ctx.fillText(`HP ${P.hp}/${maxHp()}`, 80, 28);
@@ -619,8 +800,10 @@ function drawHUD(){
   R(18, 50, 150, 6, "#444"); R(18, 50, 150*Math.min(1,P.xp/xpNext()), 6, "#4fa3ff");
   ctx.font = "8px 'Press Start 2P'"; ctx.fillStyle = "#b8b5d1"; ctx.fillText("XP", 172, 57);
   ctx.font = "13px serif"; ctx.fillStyle = "#fff"; ctx.fillText(`🧪×${P.potions}`, 194, 59);
+  ctx.font = "8px 'Press Start 2P'"; ctx.fillStyle = "#ffd447"; ctx.fillText(`MISIONES ${questsDone()}/${QUESTS.length}`, 18, 73);
+  R(132, 67, 98, 6, "#444"); R(132, 67, 98*questsDone()/QUESTS.length, 6, "#5ce07a");
+  ctx.restore();
 }
-
 // ======================= LÓGICA DE MAPA =======================
 const DIRS = {up:[0,-1], down:[0,1], left:[-1,0], right:[1,0]};
 const entAt = (x,y) => ents.find(e => e.x===x && e.y===y);
@@ -679,18 +862,32 @@ function advance(){
   } else renderDialog();
 }
 function objective(){
-  if (P.lvl < NIVEL_BOSQUE) return `Entrena en la hierba alta (este de la aldea) hasta nivel ${NIVEL_BOSQUE}.`;
-  if (ents.some(e=>e.t==="K")) return "Habla con el guardia del puente del río (norte).";
-  if (P.lvl < NIVEL_CASTILLO) return `Entrena en el Bosque Sombrío hasta nivel ${NIVEL_CASTILLO}.`;
-  return "Ve al castillo del lago (noroeste) y derrota al Dragón.";
+  const q = curQuest();
+  return q ? q.obj : "¡Todas las misiones principales cumplidas!";
 }
+let questsOpen = false;
+try { questsOpen = localStorage.getItem(SAVE_KEY + ".misiones") === "1"; } catch(e){}
 function renderMapUI(){
   if (state !== "map") return;
-  const tot = ST.correct + ST.wrong;
+  const tot = ST.correct + ST.wrong, done = questsDone(), N = QUESTS.length, cur = curQuest();
+  const items = QUESTS.map(q => {
+    const ok = q.done(), cls = ok ? "done" : q === cur ? "cur" : "";
+    return `<li class="${cls}">${ok ? "✅" : q === cur ? "👉" : "⬜"} ${q.t}${q.prog && !ok ? ` (${q.prog()})` : ""}</li>`;
+  }).join("");
   ui.innerHTML = `<div class="info"><div>🎯 <span class="obj">${objective()}</span></div>
+    <div class="quests"><details id="qd" ${questsOpen ? "open" : ""}><summary>🗺️ Misiones completadas: <b>${done} de ${N}</b> · te faltan ${N - done}</summary><ul>${items}</ul></details>
+    <div class="qbar"><i style="width:${Math.round(100*done/N)}%"></i></div></div>
     <small>Aciertos: ${ST.correct}/${tot} · Monstruos vencidos: ${ST.wins} · XP: ${P.xp}/${xpNext()}</small>
-    <div class="row"><button id="bForm">📜 Ver fórmulas</button></div></div>`;
+    <div class="row"><button id="bForm">📜 Ver fórmulas</button><button id="bReset">↺ Reiniciar progreso</button></div></div>`;
   $("bForm").onclick = () => say(TXT.formulas, "Pergamino");
+  const qd = $("qd");
+  qd.ontoggle = () => { if (!qd.isConnected) return; questsOpen = qd.open; try { localStorage.setItem(SAVE_KEY + ".misiones", questsOpen ? "1" : "0"); } catch(e){} };
+  const br = $("bReset"); let armed = false;
+  br.onclick = () => {
+    if (armed) return resetGame();
+    armed = true; br.textContent = "¿Borrar todo? Toca otra vez";
+    setTimeout(() => { if (br.isConnected){ armed = false; br.textContent = "↺ Reiniciar progreso"; } }, 4000);
+  };
 }
 
 // ======================= BATALLA =======================
@@ -712,6 +909,7 @@ function renderBattle(){
     ui.innerHTML = `
       ${B.note ? `<div style="color:#b8b5d1;margin-bottom:6px">${B.note}</div>` : ""}
       <div class="q">${p.text}</div>
+      ${datosHTML(p)}
       <div class="hintbox">${p.hints.slice(0,B.hint).map((h,i)=>`💡 ${i?"Sustituye":"Fórmula"}: ${h}`).join("<br>")}</div>
       <form class="row" id="af" autocomplete="off"><input id="ans" ${TOUCH?'inputmode="none"':'inputmode="decimal"'} class="${tgt==="ans"?"tgt":""}" placeholder="Tu respuesta${p.unit?" (°)":""}" value="${prev}"><button type="submit">⚔️ Atacar</button></form>
       ${TOUCH ? keypadHTML(tgt) : ""}
@@ -722,7 +920,7 @@ function renderBattle(){
         <button id="bRun">🏃 Huir</button>
       </div>
       <div class="calc" id="calc" ${B.calcOpen?"":"hidden"}>
-        <small>Calculadora en GRADOS. Usa sqrt( ), cos( ), acos( ), ^ para potencias. Ej: <code>sqrt(5^2+7^2-2*5*7*cos(40))</code></small>
+        <small>Calculadora en GRADOS. Usa sqrt( ), cos( ), acos( ) para cos⁻¹, ^ para potencias. Ej: <code>sqrt(5^2+7^2-2*5*7*cos(40))</code></small>
         <input id="calcIn" ${TOUCH?'inputmode="none"':''} class="${tgt==="calc"?"tgt":""}" placeholder="${TOUCH?"Toca aquí y usa el teclado de arriba":"Escribe una operación"}" value="${calcPrev.replace(/"/g,"&quot;")}">
         <div class="calcout" id="calcOut"></div>
       </div>`;
@@ -753,15 +951,23 @@ function renderBattle(){
     $("bNext").onclick = next; $("bNext").focus();
   }
 }
+// Datos del triángulo también en texto (legible en teléfono aunque el diagrama sea pequeño)
+function datosHTML(p){
+  const known = [], {sides, angles} = p.lab;
+  let ask = "";
+  for (const s of ["a","b","c"]) if (sides[s] !== undefined){ if (sides[s] === "?") ask = s; else known.push(`${s} = ${sides[s]}`); }
+  for (const K of LET) if (angles[K]){ if (angles[K] === "?") ask = K; else known.push(`${K} = ${angles[K]}`); }
+  return `<div class="datos">📐 Datos: ${known.join(" · ")} &nbsp;→&nbsp; Buscas: <b>${ask}</b></div>`;
+}
 function keypadHTML(tgt){
   const base = ["1","2","3","4","5","6","7","8","9","0",".","⌫"];
-  const fx = ["(",")","^","√","cos","acos","+","−","×","÷","C","➜ Resp."];
+  const fx = ["(",")","^","√","cos","cos⁻¹","+","−","×","÷","C","➜ Resp."];
   const keys = tgt === "calc" ? fx.concat(base) : base;
   return `<div class="kp">${keys.map(k => `<button type="button" data-k="${k}" class="${k==="⌫"||k==="C"?"del":k==="➜ Resp."?"use":fx.includes(k)?"fx":""}">${k}</button>`).join("")}</div>`;
 }
 function kpPress(k){
   const el = $(B.calcOpen && B.target === "calc" ? "calcIn" : "ans"); if (!el) return;
-  const rep = {"√":"sqrt(", "cos":"cos(", "acos":"acos(", "×":"*", "÷":"/", "−":"-"};
+  const rep = {"√":"sqrt(", "cos":"cos(", "cos⁻¹":"acos(", "×":"*", "÷":"/", "−":"-"};
   if (k === "⌫") el.value = el.value.slice(0,-1);
   else if (k === "C") el.value = "";
   else if (k === "➜ Resp."){
@@ -791,11 +997,11 @@ function submit(){
   const p = B.prob, ok = Math.abs(v - p.answer) <= p.tol;
   if (ok){
     ST.correct++; B.hp--; B.flash = 24; sfx.hit();
-    B.fx.push({text:"¡ZAS!", x:170, y:150, t:50, c:"#ffd447"});
+    B.fx.push({text:"¡ZAS!", y:150, t:50, c:"#ffd447"});
     B.msg = `✔ ¡Correcto! ${p.ansTxt}${p.unit}. Golpeas al ${B.m.name}.`;
   } else {
     ST.wrong++; P.hp = Math.max(0, P.hp - B.m.dmg); sfx.hurt(); shakeScreen();
-    B.fx.push({text:`-${B.m.dmg} HP`, x:170, y:140, t:50, c:"#ff5d6c"});
+    B.fx.push({text:`-${B.m.dmg} HP`, y:140, t:50, c:"#ff5d6c"});
     B.msg = `✘ Respondiste ${v}, pero la respuesta es ${p.ansTxt}${p.unit}. El ${B.m.name} te ataca: −${B.m.dmg} HP.`;
   }
   B.lastOk = ok; B.phase = "result"; B.resAt = performance.now(); renderBattle();
@@ -831,8 +1037,10 @@ function shakeScreen(){ shakeT = 14; }
 function endGame(){
   state = "end";
   const tot = ST.correct + ST.wrong, pct = tot ? Math.round(100*ST.correct/tot) : 0;
-  const mins = Math.max(1, Math.round((Date.now()-ST.t0)/60000));
-  const fecha = new Date().toLocaleString("es-MX", {dateStyle:"long", timeStyle:"short"});
+  const mins = Math.max(1, Math.round((ST.ms || (Date.now()-ST.t0))/60000));
+  if (!ST.fin) ST.fin = Date.now();
+  save();
+  const fecha = new Date(ST.fin).toLocaleString("es-MX", {dateStyle:"long", timeStyle:"short"});
   const ov = $("overlay"); ov.hidden = false;
   ov.innerHTML = `<div class="cert"><h2>🏆 CERTIFICADO 🏆</h2>
     <p><b>${escapeHtml(P.name)}</b> derrotó al Dragón Trigonométrico y domina la Ley de los Cosenos.</p>
@@ -841,7 +1049,8 @@ function endGame(){
     <tr><td>Nivel final</td><td>${P.lvl}</td></tr><tr><td>Tiempo</td><td>${mins} min</td></tr></table>
     <p style="font-size:13px">${fecha}</p>
     <p style="font-size:13px"><b>Toma una captura de pantalla</b> y envíala a tu profesor.</p></div>
-    <button class="main" onclick="location.reload()">↻ JUGAR OTRA VEZ</button>`;
+    <button class="main" id="againBtn">↻ JUGAR OTRA VEZ</button>`;
+  $("againBtn").onclick = resetGame;
   ui.innerHTML = `<div class="info">¡Felicidades! 🎉</div>`;
 }
 function escapeHtml(s){ return s.replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
@@ -875,15 +1084,30 @@ $("startBtn").onclick = () => {
   const n = $("nameIn").value.trim();
   if (!n){ const i = $("nameIn"); i.classList.remove("shake"); void i.offsetWidth; i.classList.add("shake"); i.focus(); return; }
   if (!TOUCH && detectTouch()) setTouch(true);
+  try { localStorage.removeItem(SAVE_KEY); } catch(e){}   // partida nueva: reemplaza la anterior
   P.name = n; ST.t0 = Date.now(); $("overlay").hidden = true; state = "map";
   beep(1,.01); // desbloquea audio
   say(TXT.intro, "Narrador");
+  save();
 };
+function continueGame(d){
+  applySave(d);
+  if (!TOUCH && detectTouch()) setTouch(true);
+  $("overlay").hidden = true; state = "map";
+  beep(1,.01);
+  if (d.done || !alive(ENT.B)) return endGame();
+  say([`¡Bienvenido de vuelta, ${escapeHtml(P.name)}! Tu progreso estaba guardado en este navegador.`, `Llevas ${questsDone()} de ${QUESTS.length} misiones. Objetivo: ${objective()}`], "Narrador");
+}
 $("nameIn").addEventListener("keydown", e => { if (e.key === "Enter") $("startBtn").click(); });
 
 // ======================= BUCLE =======================
+let lastNow = performance.now();
 function loop(){
   T++;
+  const now = performance.now();
+  if ((state === "map" || state === "dialog" || state === "battle") && !document.hidden) ST.ms += Math.min(250, now - lastNow);
+  lastNow = now;
+  if (T % 60 === 0) save();
   if (state === "map") updateMap();
   document.body.classList.toggle("battle", state === "battle");
   $("pad").style.visibility = state === "end" ? "hidden" : "visible";
@@ -895,6 +1119,24 @@ function loop(){
   requestAnimationFrame(loop);
 }
 ui.innerHTML = `<div class="info">Escribe tu nombre y presiona <b>COMENZAR</b>.</div>`;
+const SAVED = readSave();
+if (SAVED){
+  const box = document.createElement("div"); box.id = "contBox";
+  const d = SAVED, nq = (() => { // misiones de la partida guardada, sin aplicarla todavía
+    const tmp = {lvl:d.P.lvl}, g = i => d.ents[i];
+    const idx = t => ENT_ALL.indexOf(ENT[t]);
+    return [g(idx("S")).talked, g(idx("N")).talked, tmp.lvl >= NIVEL_BOSQUE, g(idx("K")).gone, tmp.lvl >= NIVEL_CASTILLO, g(idx("L")).gone, g(idx("B")).gone,
+            CHESTS.every(c => g(ENT_ALL.indexOf(c)).open)].filter(Boolean).length;
+  })();
+  box.innerHTML = `<p>Partida guardada en este navegador: <b>${escapeHtml(d.P.name)}</b> · Nivel ${d.P.lvl} · Misiones ${nq} de ${QUESTS.length}</p>
+    <button class="main" id="contBtn">▶ CONTINUAR</button>
+    <p style="font-size:13px">o escribe un nombre para empezar una partida NUEVA (se borra la anterior):</p>`;
+  $("overlay").insertBefore(box, $("nameIn"));
+  $("overlay").querySelector("p").hidden = true;   // deja espacio en pantallas pequeñas
+  $("startBtn").textContent = "NUEVA PARTIDA"; $("startBtn").classList.remove("main");
+  $("contBtn").onclick = () => continueGame(SAVED);
+  ui.innerHTML = `<div class="info">Presiona <b>CONTINUAR</b> para seguir donde te quedaste.</div>`;
+}
 loop();
 </script>
 </body>
