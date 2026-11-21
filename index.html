@@ -41,10 +41,6 @@ button.main:hover{background:#e04a3a}
 .res{font-weight:700;margin-bottom:6px}
 .res.ok{color:var(--good)} .res.bad{color:var(--bad)}
 .sol{background:#2a2750;border-left:4px solid var(--accent);padding:8px 10px;border-radius:4px;margin:6px 0 10px;font-family:"Cambria Math","Times New Roman",serif;font-size:17px}
-.calc{margin-top:8px;padding:8px;background:#2a2750;border-radius:4px}
-.calc input{width:100%;font-size:15px;padding:6px 8px;border-radius:4px;border:2px solid #aaa;font-family:monospace}
-.calc small{color:var(--muted)}
-.calcout{font-family:monospace;font-size:17px;color:var(--accent);margin-top:4px;min-height:1.3em}
 .info .obj{color:var(--accent)}
 .info small{color:var(--muted)}
 .shake{animation:sh .3s}
@@ -67,9 +63,7 @@ button,#pad,canvas{touch-action:manipulation;-webkit-touch-callout:none;-webkit-
 /* Teclado numérico propio (pantallas táctiles) */
 .kp{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-top:8px}
 .kp button{padding:0;height:42px;font-size:18px;font-weight:700;background:#2a2750}
-.kp button.fx{background:#4a3f7a;font-size:15px}
 .kp button.del{background:#7a2f3a}
-.kp button.use{background:#2f7a45;font-size:13px}
 input.tgt{outline:3px solid var(--accent);outline-offset:1px}
 body.battle #pad{display:none}
 /* Fórmulas estandarizadas: fracciones apiladas */
@@ -82,6 +76,65 @@ body.battle #pad{display:none}
 .datos b{color:#ff8a95}
 .sol small{display:block;font-family:monospace;font-size:13px;color:var(--muted);margin-top:6px;word-break:break-all}
 code{background:#2a2750;padding:1px 4px;border-radius:3px;word-break:break-all}
+/* Calculadora común (emergente) */
+#bCalc.on{background:#2f7a45}
+#calcPop{position:fixed;z-index:50;right:12px;bottom:12px;width:min(340px,calc(100vw - 16px));max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px);overflow:auto;
+  background:var(--panel);border:4px solid var(--border);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.6);padding:8px 10px 10px;display:flex;flex-direction:column;gap:7px;touch-action:manipulation}
+#calcPop[hidden]{display:none}
+.cp-head{display:flex;justify-content:space-between;align-items:center;cursor:move;user-select:none;-webkit-user-select:none;touch-action:none;font-weight:700;color:var(--accent)}
+.cp-head small{color:var(--muted);font-weight:400}
+.cp-head button{padding:2px 10px;font-size:16px;background:#7a2f3a}
+.cp-datos{font-size:14px;color:#cfe3ff}
+.cp-datos b{color:#ff8a95}
+.cp-disp{background:#e9f5d9;color:#14240d;border-radius:6px;padding:6px 10px;border:3px inset #8fa77a;font-family:"Cambria Math","Times New Roman",serif}
+#cpExpr{font-size:20px;min-height:1.4em;white-space:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+#cpExpr .ghost{color:#9aae8a}
+#cpRes{font-size:24px;font-weight:700;text-align:right;min-height:1.3em;color:#3c5a2c}
+#cpRes.final{color:#14240d}
+#cpRes.err{font-size:15px;color:#b3261e}
+.cp-keys{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.cp-keys button{height:46px;padding:0;font-size:19px;font-weight:700;background:#2a2750;border-width:2px}
+.cp-keys button.fn{background:#4a3f7a;font-size:16px}
+.cp-keys button.op{background:#3b5a8c;font-size:22px}
+.cp-keys button.del{background:#7a2f3a;font-size:16px}
+.cp-keys button.eq{background:#c0392b;grid-row:span 2;height:auto;font-size:24px}
+.cp-keys button.zero{grid-column:span 2}
+.cp-use{background:#2f7a45;font-size:15px;padding:9px}
+@media (max-width:600px) and (orientation:portrait){
+  #calcPop{left:8px;right:8px;bottom:8px;width:auto;gap:5px;padding:6px 8px 8px}
+  .cp-keys{gap:5px}
+  .cp-keys button{height:40px}
+  #cpExpr{font-size:18px} #cpRes{font-size:21px}
+  .cp-use{padding:7px}
+}
+@media (max-height:620px){
+  .cp-keys button{height:36px;font-size:16px}
+  .cp-keys button.fn,.cp-keys button.del{font-size:14px}
+  #cpExpr{font-size:17px} #cpRes{font-size:19px}
+  #calcPop{gap:5px;padding:6px 8px 8px}
+  .cp-use{padding:6px;font-size:14px}
+}
+@media (orientation:landscape) and (max-height:620px){
+  #calcPop{top:6px;bottom:auto;right:6px;width:min(400px,48vw);max-height:calc(100vh - 12px);max-height:calc(100dvh - 12px)}
+}
+@media (orientation:landscape) and (max-height:450px){
+  .cp-datos{display:none}
+  .cp-keys{gap:4px}
+  .cp-keys button{height:30px;font-size:15px}
+  .cp-keys button.op{font-size:18px}
+  .cp-disp{padding:3px 8px}
+  #cpExpr{font-size:15px} #cpRes{font-size:17px}
+  .cp-use{padding:2px;font-size:13px;height:26px}
+  #calcPop{gap:4px;padding:4px 8px 6px}
+}
+@media (orientation:landscape) and (max-height:380px){
+  .cp-head{font-size:13px} .cp-head button{padding:0 8px;font-size:13px}
+  .cp-disp{display:flex;align-items:baseline;gap:8px;padding:2px 8px}
+  #cpExpr{flex:1;min-width:0;font-size:15px} #cpRes{font-size:16px;white-space:nowrap}
+  .cp-keys button{height:24px;font-size:14px;border-width:1px}
+  .cp-keys button.op{font-size:16px}
+  .cp-keys button.fn,.cp-keys button.del{font-size:12px}
+}
 /* Misiones */
 .quests{margin-top:8px}
 .quests summary{cursor:pointer;font-size:15px}
@@ -205,7 +258,7 @@ const TXT = {
   N: ["¿Conoces los TRES LADOS y buscas un ÁNGULO? Primero despeja el coseno:<br>" + fm(COSANG("C","c","a","b")),
       "Luego aplica coseno inverso (cos⁻¹) para obtener el ángulo:<br>" + fm(ANG("C","c","a","b")),
       "Truco: el lado que se RESTA arriba es el que está ENFRENTE del ángulo que buscas (c para C). Abajo van los otros dos lados.",
-      "En la calculadora: modo GRADOS (DEG) y SHIFT + cos para cos⁻¹. Pon paréntesis a TODO el numerador y a TODO el denominador:<br><code>acos((a^2+b^2-c^2)/(2*a*b))</code>",
+      "En la 🧮 Calculadora del juego (en batalla) usa los botones x² y cos⁻¹, y pon paréntesis a TODO el numerador y a TODO el denominador:<br><code>cos⁻¹((a² + b² − c²) ÷ (2 × a × b))</code><br>En una calculadora científica: modo DEG y SHIFT + cos.",
       "Redondea tus respuestas a 1 decimal. Se acepta un pequeño margen de error."],
   Kno: ["¡Alto! Más allá del río está el Bosque Sombrío.",
         `Solo dejo pasar a guerreros de nivel ${NIVEL_BOSQUE} o más. Entrena en la hierba alta.`],
@@ -221,7 +274,7 @@ const TXT = {
              "<b>Para encontrar un LADO</b> (conoces 2 lados y el ángulo entre ellos):" + TRIOS.map(([x,y,z,X]) => fm(LADO(x,y,z,X), 1)).join(""),
              "<b>Para encontrar un ÁNGULO</b> (conoces los 3 lados):" + TRIOS.map(([x,y,z,X]) => fm(ANG(X,x,y,z), 1)).join(""),
              "<b>Truco</b>: el lado que está enfrente del ángulo va solo a la izquierda (fórmula del lado) o se RESTA en el numerador (fórmula del ángulo).",
-             "<b>En la calculadora</b> (modo DEG): " + fm(ANG("C","c","a","b")) + "<br>se escribe <code>acos((a^2+b^2-c^2)/(2*a*b))</code>"],
+             "<b>En la calculadora</b> (modo DEG): " + fm(ANG("C","c","a","b")) + "<br>en la 🧮 Calculadora se ve así: <code>cos⁻¹((a² + b² − c²) ÷ (2 × a × b))</code>"],
 };
 
 const MONS = {
@@ -270,7 +323,7 @@ function genSide(lo, hi, angList){
     hints:[fm(LADO(x,y,z,X)),
            fm(`${x}² = ${vy}² + ${vz}² − 2·${vy}·${vz}·cos(${g}°)`)],
     sol:`${x}² = ${vy}² + ${vz}² − 2·${vy}·${vz}·cos(${g}°)<br>${x}² = ${vy*vy} + ${vz*vz} − ${2*vy*vz}·cos(${g}°) = ${f2(x2)}<br>${x} = √${f2(x2)} ≈ <b>${f1(vx)}</b>` +
-        `<small>En la calculadora: sqrt(${vy}^2+${vz}^2-2*${vy}*${vz}*cos(${g}))</small>`,
+        `<small>En la 🧮 Calculadora: √(${vy}² + ${vz}² − 2 × ${vy} × ${vz} × cos(${g}))</small>`,
     ansTxt:`${x} ≈ ${f1(vx)}`,
   };
 }
@@ -291,7 +344,7 @@ function genAngle(lo, hi){
     hints:[fm(ANG(X,x,y,z)),
            fm(`${X} = cos⁻¹${PAR(frac(`${vy}² + ${vz}² − ${vx}²`, `2·${vy}·${vz}`))}`)],
     sol:`cos(${X}) = ${frac(`${vy}² + ${vz}² − ${vx}²`, `2·${vy}·${vz}`)} = ${frac(`${vy*vy} + ${vz*vz} − ${vx*vx}`, den)} = ${frac(num, den)} ≈ ${cv.toFixed(4)}<br>${X} = cos⁻¹(${cv.toFixed(4)}) ≈ <b>${f1(ang)}°</b>` +
-        `<small>En la calculadora: acos((${vy}^2+${vz}^2-${vx}^2)/(2*${vy}*${vz}))</small>`,
+        `<small>En la 🧮 Calculadora: cos⁻¹((${vy}² + ${vz}² − ${vx}²) ÷ (2 × ${vy} × ${vz}))</small>`,
     ansTxt:`${X} ≈ ${f1(ang)}`,
   };
 }
@@ -893,7 +946,7 @@ function renderMapUI(){
 // ======================= BATALLA =======================
 function startBattle(zone){
   const m = zone==="boss" ? {...MONS.boss} : {...pick(MONS[zone])};
-  B = {m, zone, hp:m.hits, fx:[], flash:0, intro:25, usedHint:false, calcOpen:false, phase:"ask"};
+  B = {m, zone, hp:m.hits, fx:[], flash:0, intro:25, usedHint:false, phase:"ask"};
   state = "battle"; held = []; tap = null; sfx.enc();
   newQuestion(true);
 }
@@ -903,26 +956,21 @@ function newQuestion(first){
   renderBattle();
 }
 function renderBattle(){
-  const p = B.prob, tgt = B.calcOpen && B.target === "calc" ? "calc" : "ans";
+  const p = B.prob;
   if (B.phase === "ask"){
-    const prev = $("ans") ? $("ans").value : "", calcPrev = $("calcIn") ? $("calcIn").value : "";
+    const prev = $("ans") ? $("ans").value : "";
     ui.innerHTML = `
       ${B.note ? `<div style="color:#b8b5d1;margin-bottom:6px">${B.note}</div>` : ""}
       <div class="q">${p.text}</div>
       ${datosHTML(p)}
       <div class="hintbox">${p.hints.slice(0,B.hint).map((h,i)=>`💡 ${i?"Sustituye":"Fórmula"}: ${h}`).join("<br>")}</div>
-      <form class="row" id="af" autocomplete="off"><input id="ans" ${TOUCH?'inputmode="none"':'inputmode="decimal"'} class="${tgt==="ans"?"tgt":""}" placeholder="Tu respuesta${p.unit?" (°)":""}" value="${prev}"><button type="submit">⚔️ Atacar</button></form>
-      ${TOUCH ? keypadHTML(tgt) : ""}
+      <form class="row" id="af" autocomplete="off"><input id="ans" ${TOUCH?'inputmode="none"':'inputmode="decimal"'} class="${TOUCH?"tgt":""}" placeholder="Tu respuesta${p.unit?" (°)":""}" value="${prev}"><button type="submit">⚔️ Atacar</button></form>
+      ${TOUCH ? keypadHTML() : ""}
       <div class="row btns">
         <button id="bHint" ${B.hint>=2?"disabled":""}>💡 Pista</button>
         <button id="bPot">🧪 Poción (${P.potions})</button>
-        <button id="bCalc">🧮 Calculadora</button>
+        <button id="bCalc" class="${CALC.open?"on":""}">🧮 Calculadora</button>
         <button id="bRun">🏃 Huir</button>
-      </div>
-      <div class="calc" id="calc" ${B.calcOpen?"":"hidden"}>
-        <small>Calculadora en GRADOS. Usa sqrt( ), cos( ), acos( ) para cos⁻¹, ^ para potencias. Ej: <code>sqrt(5^2+7^2-2*5*7*cos(40))</code></small>
-        <input id="calcIn" ${TOUCH?'inputmode="none"':''} class="${tgt==="calc"?"tgt":""}" placeholder="${TOUCH?"Toca aquí y usa el teclado de arriba":"Escribe una operación"}" value="${calcPrev.replace(/"/g,"&quot;")}">
-        <div class="calcout" id="calcOut"></div>
       </div>`;
     $("af").onsubmit = ev => { ev.preventDefault(); submit(); };
     $("bHint").onclick = () => { if (B.hint<2){ if (B.hint===0) ST.hints++; B.hint++; B.usedHint = true; B.note = "Usar pistas reduce a la mitad la XP de esta batalla."; renderBattle(); } };
@@ -932,18 +980,14 @@ function renderBattle(){
       else { P.potions--; P.hp = Math.min(maxHp(), P.hp+15); B.note = "Bebiste una poción: +15 HP."; sfx.chest(); }
       renderBattle();
     };
-    $("bCalc").onclick = () => { B.calcOpen = !B.calcOpen; B.target = B.calcOpen ? "calc" : "ans"; renderBattle(); if (B.calcOpen && !TOUCH) $("calcIn").focus(); };
-    if (TOUCH){
-      $("ans").onpointerdown = () => { if (B.target !== "ans"){ B.target = "ans"; renderBattle(); } };
-      $("calcIn").onpointerdown = () => { if (B.target !== "calc"){ B.target = "calc"; renderBattle(); } };
-      ui.querySelectorAll(".kp button").forEach(b => b.onclick = () => kpPress(b.dataset.k));
-    }
+    $("bCalc").onclick = () => calcToggle();
+    if (TOUCH) ui.querySelectorAll(".kp button").forEach(b => b.onclick = () => kpPress(b.dataset.k));
     $("bRun").onclick = () => {
       if (B.zone === "boss"){ B.note = "¡No puedes huir del Dragón!"; renderBattle(); return; }
       endBattle(); say(["Escapaste a salvo."], "");
     };
-    const ci = $("calcIn"); ci.oninput = () => updCalc(); updCalc();
-    if (!B.calcOpen && matchMedia("(pointer:fine)").matches) $("ans").focus();
+    if (!CALC.open && matchMedia("(pointer:fine)").matches) $("ans").focus();
+    calcDatos();
   } else {
     ui.innerHTML = `<div class="res ${B.lastOk?"ok":"bad"}">${B.msg}</div>
       <div class="sol">📐 ${p.sol}</div>
@@ -952,44 +996,189 @@ function renderBattle(){
   }
 }
 // Datos del triángulo también en texto (legible en teléfono aunque el diagrama sea pequeño)
-function datosHTML(p){
+function datosTxt(p){
   const known = [], {sides, angles} = p.lab;
   let ask = "";
   for (const s of ["a","b","c"]) if (sides[s] !== undefined){ if (sides[s] === "?") ask = s; else known.push(`${s} = ${sides[s]}`); }
   for (const K of LET) if (angles[K]){ if (angles[K] === "?") ask = K; else known.push(`${K} = ${angles[K]}`); }
-  return `<div class="datos">📐 Datos: ${known.join(" · ")} &nbsp;→&nbsp; Buscas: <b>${ask}</b></div>`;
+  return {known: known.join(" · "), ask};
 }
-function keypadHTML(tgt){
-  const base = ["1","2","3","4","5","6","7","8","9","0",".","⌫"];
-  const fx = ["(",")","^","√","cos","cos⁻¹","+","−","×","÷","C","➜ Resp."];
-  const keys = tgt === "calc" ? fx.concat(base) : base;
-  return `<div class="kp">${keys.map(k => `<button type="button" data-k="${k}" class="${k==="⌫"||k==="C"?"del":k==="➜ Resp."?"use":fx.includes(k)?"fx":""}">${k}</button>`).join("")}</div>`;
+function datosHTML(p){
+  const d = datosTxt(p);
+  return `<div class="datos">📐 Datos: ${d.known} &nbsp;→&nbsp; Buscas: <b>${d.ask}</b></div>`;
+}
+// Teclado numérico para escribir la respuesta en pantallas táctiles
+function keypadHTML(){
+  const keys = ["1","2","3","4","5","6","7","8","9","0",".","⌫"];
+  return `<div class="kp">${keys.map(k => `<button type="button" data-k="${k}" class="${k==="⌫"?"del":""}">${k}</button>`).join("")}</div>`;
 }
 function kpPress(k){
-  const el = $(B.calcOpen && B.target === "calc" ? "calcIn" : "ans"); if (!el) return;
-  const rep = {"√":"sqrt(", "cos":"cos(", "cos⁻¹":"acos(", "×":"*", "÷":"/", "−":"-"};
-  if (k === "⌫") el.value = el.value.slice(0,-1);
-  else if (k === "C") el.value = "";
-  else if (k === "➜ Resp."){
-    try { const r = calcEval(el.value); if (isFinite(r)){ $("ans").value = String(+r.toFixed(4)); B.target = "ans"; renderBattle(); } } catch(e){}
-    return;
-  } else el.value += rep[k] || k;
-  if (el.id === "calcIn") updCalc();
+  const el = $("ans"); if (!el) return;
+  if (k === "⌫") el.value = el.value.slice(0,-1); else el.value += k;
 }
-function updCalc(){
-  const ci = $("calcIn"), out = $("calcOut"); if (!ci) return;
-  if (!ci.value.trim()){ out.textContent = ""; return; }
-  try { const v = calcEval(ci.value); out.textContent = isFinite(v) ? "= " + (+v.toFixed(6)) : "…"; }
-  catch(e){ out.textContent = "…"; }
+
+// ======================= CALCULADORA COMÚN (con botones) =======================
+// Aparece solo al tocar "🧮 Calculadora". Trabaja en GRADOS. El estudiante ve la
+// operación como en una calculadora de mano (√(9² + 8² − 2 × 9 × 8 × cos(80))).
+const CALC = {open:false, toks:[], ans:0, done:false, drag:null, moved:false};
+const CK = {   // tecla -> lo que se ve (d) y lo que se evalúa (e); t: tipo
+  "+":{d:" + ",e:"+",t:"op"}, "−":{d:" − ",e:"-",t:"op"}, "×":{d:" × ",e:"*",t:"op"}, "÷":{d:" ÷ ",e:"/",t:"op"},
+  "(":{d:"(",e:"(",t:"open"}, ")":{d:")",e:")",t:"close"},
+  "π":{d:"π",e:"pi",t:"val"}, "Ans":{d:"Ans",e:"ans",t:"val"},
+  "x²":{d:"²",e:"^2",t:"post"}, "xʸ":{d:"^",e:"^",t:"op"},
+  "√":{d:"√(",e:"sqrt(",t:"open"}, "cos":{d:"cos(",e:"cos(",t:"open"}, "sin":{d:"sin(",e:"sin(",t:"open"}, "cos⁻¹":{d:"cos⁻¹(",e:"acos(",t:"open"},
+};
+const CALC_KEYS = [
+  ["cos","fn"],["sin","fn"],["cos⁻¹","fn"],["√","fn"],["AC","del"],
+  ["x²","fn"],["xʸ","fn"],["(","fn"],[")","fn"],["⌫","del"],
+  ["7"],["8"],["9"],["÷","op"],["π","fn"],
+  ["4"],["5"],["6"],["×","op"],["Ans","fn"],
+  ["1"],["2"],["3"],["−","op"],["=","eq"],
+  ["0","zero"],["."],["+","op"],
+];
+(function buildCalc(){
+  const el = document.createElement("div");
+  el.id = "calcPop"; el.hidden = true; el.setAttribute("role","dialog"); el.setAttribute("aria-label","Calculadora");
+  el.innerHTML = `<div class="cp-head" id="cpHead"><span>🧮 Calculadora <small>(grados)</small></span><button type="button" id="cpClose" aria-label="Cerrar calculadora">✕</button></div>
+    <div class="cp-datos" id="cpDatos"></div>
+    <div class="cp-disp"><div id="cpExpr"></div><div id="cpRes"></div></div>
+    <div class="cp-keys">${CALC_KEYS.map(([k,c]) => `<button type="button" data-k="${k}" class="${c||""}">${k}</button>`).join("")}</div>
+    <button type="button" class="cp-use" id="cpUse">➜ Usar resultado como respuesta</button>`;
+  document.body.appendChild(el);
+  el.querySelectorAll(".cp-keys button").forEach(b => b.addEventListener("click", () => calcKey(b.dataset.k)));
+  $("cpClose").onclick = () => calcToggle(false);
+  $("cpUse").onclick = calcUse;
+  // Se puede arrastrar desde la barra de título (útil en tableta y PC)
+  const head = $("cpHead");
+  head.addEventListener("pointerdown", e => {
+    if (e.target.closest("button")) return;
+    const r = el.getBoundingClientRect();
+    CALC.drag = {dx: e.clientX - r.left, dy: e.clientY - r.top}; head.setPointerCapture(e.pointerId);
+  });
+  head.addEventListener("pointermove", e => {
+    if (!CALC.drag) return;
+    const w = el.offsetWidth, h = el.offsetHeight;
+    el.style.left = Math.max(0, Math.min(innerWidth - w, e.clientX - CALC.drag.dx)) + "px";
+    el.style.top = Math.max(0, Math.min(innerHeight - h, e.clientY - CALC.drag.dy)) + "px";
+    el.style.right = el.style.bottom = "auto"; CALC.moved = true;
+  });
+  ["pointerup","pointercancel"].forEach(ev => head.addEventListener(ev, () => CALC.drag = null));
+  addEventListener("resize", () => { if (CALC.open) calcPlace(); });
+})();
+function calcPlace(){
+  const el = $("calcPop");
+  el.style.left = el.style.top = el.style.right = el.style.bottom = "";
+  if (CALC.moved){ CALC.moved = false; }
+  // En pantallas anchas (PC) se coloca a un lado del juego si hay espacio, para no tapar nada.
+  const wr = $("wrap").getBoundingClientRect(), w = el.offsetWidth;
+  if (innerWidth >= 700 && innerWidth - wr.right >= w + 16){ el.style.left = (wr.right + 12) + "px"; el.style.top = Math.max(8, wr.top) + "px"; el.style.right = el.style.bottom = "auto"; }
+  else if (innerWidth >= 700 && wr.left >= w + 16){ el.style.left = (wr.left - w - 12) + "px"; el.style.top = Math.max(8, wr.top) + "px"; el.style.right = el.style.bottom = "auto"; }
+  // Sin espacio a los lados (tableta, laptop chica): abajo a la izquierda, así el diagrama queda visible.
+  else if (innerWidth >= 700 && innerHeight > 620){ el.style.left = "8px"; el.style.right = "auto"; }
 }
-function calcEval(s){
-  s = s.toLowerCase().replace(/,/g,".").replace(/×/g,"*").replace(/÷/g,"/").replace(/√/g,"sqrt").replace(/π/g,"pi").replace(/arccos/g,"acos").replace(/cos\^-1|cos⁻¹/g,"acos");
-  if (!/^[0-9+\-*/^().\sa-z]*$/.test(s)) throw 0;
-  const ok = ["sqrt","cos","sin","tan","acos","asin","atan","pi"];
-  if ((s.match(/[a-z]+/g)||[]).some(w => !ok.includes(w))) throw 0;
-  s = s.replace(/\^/g,"**");
-  const d = Math.PI/180;
-  return new Function(...ok, `return (${s});`)(Math.sqrt, x=>Math.cos(x*d), x=>Math.sin(x*d), x=>Math.tan(x*d), x=>Math.acos(x)/d, x=>Math.asin(x)/d, x=>Math.atan(x)/d, Math.PI);
+function calcToggle(v = !CALC.open){
+  CALC.open = v; $("calcPop").hidden = !v;
+  if (v){ calcPlace(); calcDatos(); calcShow(); }
+  if ($("bCalc")) $("bCalc").classList.toggle("on", v);
+}
+function calcDatos(){
+  const el = $("cpDatos"); if (!el) return;
+  if (B && B.prob){ const d = datosTxt(B.prob); el.innerHTML = `📐 ${d.known} → buscas <b>${d.ask}</b>`; el.hidden = false; }
+  else el.hidden = true;
+}
+const endsVal = t => t && (t.t === "num" || t.t === "val" || t.t === "close" || t.t === "post");
+function calcKey(k){
+  const T = CALC.toks;
+  if (k === "AC"){ CALC.toks = []; CALC.done = false; return calcShow(); }
+  if (k === "⌫"){
+    if (CALC.done){ CALC.done = false; }
+    T.pop(); while (T.length && T[T.length-1].t === "imp") T.pop();
+    return calcShow();
+  }
+  if (k === "="){
+    const v = calcValue();
+    if (v !== null){ CALC.ans = v; CALC.done = true; sfx.talk(); }
+    else CALC.err = true;
+    return calcShow();
+  }
+  const isNum = /^[0-9.]$/.test(k);
+  const tok = isNum ? {d:k, e:k, t:"num"} : {...CK[k]};
+  if (CALC.done){                 // después de "=": operar sobre el resultado o empezar de nuevo
+    CALC.done = false;
+    CALC.toks = (tok.t === "op" || tok.t === "post") ? [{d:"Ans", e:"ans", t:"val"}] : [];
+  }
+  const L = CALC.toks;
+  const last = L[L.length-1];
+  if (tok.t === "op" && last && last.t === "op") L.pop();                     // cambiar de operador
+  if (tok.t === "num" && k === "."){                                         // un solo punto por número
+    let i = L.length-1, s = ""; while (i >= 0 && L[i].t === "num"){ s = L[i].e + s; i--; }
+    if (s.includes(".")) return;
+    if (!s){ if (endsVal(last)) L.push({d:"", e:"*", t:"imp"}); L.push({d:"0", e:"0", t:"num"}); }
+  } else if ((tok.t === "open" || tok.t === "val" || tok.t === "num") && endsVal(last) && !(tok.t === "num" && last.t === "num")){
+    L.push({d:"", e:"*", t:"imp"});                                          // 2π, 3(…), )( → multiplicación implícita
+  }
+  L.push(tok);
+  CALC.err = false;
+  calcShow();
+}
+function calcParens(){ let n = 0; for (const t of CALC.toks){ if (t.t === "open") n++; else if (t.t === "close") n--; } return Math.max(0, n); }
+function calcValue(){
+  if (!CALC.toks.length) return null;
+  try {
+    const v = calcEval(CALC.toks.map(t => t.e).join("") + ")".repeat(calcParens()), CALC.ans);
+    return isFinite(v) ? v : null;
+  } catch(e){ return null; }
+}
+const fmtNum = v => { const r = +v.toFixed(6); return Object.is(r, -0) ? "0" : String(r); };
+function calcShow(){
+  const ex = $("cpExpr"), rs = $("cpRes"); if (!ex) return;
+  const txt = CALC.toks.map(t => t.d).join("");
+  ex.innerHTML = txt ? escapeHtml(txt) + `<span class="ghost">${")".repeat(calcParens())}</span>` : `<span class="ghost">0</span>`;
+  const v = calcValue();
+  if (CALC.done){ rs.className = "final"; rs.textContent = "= " + fmtNum(CALC.ans); }
+  else if (CALC.err){ rs.className = "err"; rs.textContent = "Revisa la operación"; }
+  else { rs.className = ""; rs.textContent = v === null ? "" : "= " + fmtNum(v); }
+  ex.scrollLeft = ex.scrollWidth;
+}
+function calcUse(){
+  const v = CALC.done ? CALC.ans : calcValue();
+  if (v === null || !$("ans")){ CALC.err = true; return calcShow(); }
+  CALC.ans = v; CALC.done = true; calcShow();
+  $("ans").value = String(Math.round(v*10)/10);
+  calcToggle(false);
+  if (matchMedia("(pointer:fine)").matches) $("ans").focus();
+}
+addEventListener("keydown", e => {                    // teclado físico (PC) cuando la calculadora está abierta
+  if (!CALC.open || e.target.tagName === "INPUT") return;
+  const m = {"*":"×", "x":"×", "/":"÷", "-":"−", "+":"+", "^":"xʸ", "(":"(", ")":")", "p":"π", "Enter":"=", "=":"=", "Backspace":"⌫", "Delete":"AC", ".":".", ",":"."};
+  if (e.key === "Escape"){ calcToggle(false); e.preventDefault(); e.stopImmediatePropagation(); return; }
+  const k = /^[0-9]$/.test(e.key) ? e.key : m[e.key];
+  if (k){ calcKey(k); e.preventDefault(); e.stopImmediatePropagation(); }
+}, true);
+// Evaluador propio (sin eval): + − × ÷, potencias, paréntesis, π, Ans y funciones en grados.
+function calcEval(src, ans = 0){
+  const s = src.toLowerCase().replace(/\s+/g,"").replace(/,/g,".").replace(/×/g,"*").replace(/÷/g,"/").replace(/−/g,"-")
+               .replace(/√/g,"sqrt").replace(/π/g,"pi").replace(/arccos|cos\^-1|cos⁻¹/g,"acos");
+  let i = 0;
+  const D = Math.PI/180, F = {sqrt:Math.sqrt, cos:x=>Math.cos(x*D), sin:x=>Math.sin(x*D), tan:x=>Math.tan(x*D),
+    acos:x=>Math.acos(x)/D, asin:x=>Math.asin(x)/D, atan:x=>Math.atan(x)/D};
+  const peek = () => s[i];
+  function expr(){ let v = term(); while (peek() === "+" || peek() === "-"){ const o = s[i++]; const r = term(); v = o === "+" ? v + r : v - r; } return v; }
+  function term(){ let v = unary(); while (peek() === "*" || peek() === "/"){ const o = s[i++]; const r = unary(); v = o === "*" ? v * r : v / r; } return v; }
+  function unary(){ if (peek() === "-"){ i++; return -unary(); } if (peek() === "+"){ i++; return unary(); } return power(); }
+  function power(){ const b = primary(); if (peek() === "^"){ i++; return Math.pow(b, unary()); } return b; }
+  function primary(){
+    if (peek() === "("){ i++; const v = expr(); if (s[i++] !== ")") throw 0; return v; }
+    const num = /^\d*\.?\d+(e[+-]?\d+)?|^\d+\.?/.exec(s.slice(i));
+    if (num){ i += num[0].length; return parseFloat(num[0]); }
+    const w = /^[a-z]+/.exec(s.slice(i)); if (!w) throw 0;
+    i += w[0].length;
+    if (w[0] === "pi") return Math.PI;
+    if (w[0] === "ans") return ans;
+    const f = F[w[0]]; if (!f || s[i++] !== "(") throw 0;
+    const v = expr(); if (s[i++] !== ")") throw 0; return f(v);
+  }
+  const v = expr(); if (i !== s.length) throw 0; return v;
 }
 function submit(){
   const inp = $("ans"), v = parseFloat(inp.value.replace(",", ".").replace("°",""));
@@ -1012,7 +1201,7 @@ function next(){
   if (P.hp <= 0) return lose();
   newQuestion(false);
 }
-function endBattle(){ state = "map"; B = null; P.steps = 0; cooldown = 10; held = []; tap = null; renderMapUI(); }
+function endBattle(){ calcToggle(false); state = "map"; B = null; P.steps = 0; cooldown = 10; held = []; tap = null; renderMapUI(); }
 function win(){
   const m = B.m, gain = Math.round(m.xp * (B.usedHint ? 0.5 : 1)), boss = B.zone === "boss";
   ST.wins++; P.xp += gain;
@@ -1035,6 +1224,7 @@ function shakeScreen(){ shakeT = 14; }
 
 // ======================= FIN DEL JUEGO =======================
 function endGame(){
+  calcToggle(false);
   state = "end";
   const tot = ST.correct + ST.wrong, pct = tot ? Math.round(100*ST.correct/tot) : 0;
   const mins = Math.max(1, Math.round((ST.ms || (Date.now()-ST.t0))/60000));
